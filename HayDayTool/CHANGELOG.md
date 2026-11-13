@@ -1,0 +1,47 @@
+# Changelog
+
+All notable changes to this project are documented here. The format is based on
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
+adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.2.0] - 2026-11-13
+
+### Added
+- `list_export` — returns the checklist as one clean, copy-paste-friendly text
+  block (header with barn/silo space left, then goods grouped by storage with
+  `[ ]` / `[x]` checkboxes).
+
+### Changed
+- Tool results that are plain strings are now returned verbatim instead of
+  JSON-encoded, so exported text pastes cleanly.
+
+## [1.1.0] - 2026-11-13
+
+### Added
+- **Needed-goods checklist** — a persistent storage planner. Add goods with
+  amounts, check them off as you collect them, and see a running header with
+  barn/silo capacity, space used, and space remaining (crops count against the
+  silo; everything else against the barn). Seven new tools: `list_add`,
+  `list_set_amount`, `list_check`, `list_remove`, `list_view`,
+  `list_set_capacity`, `list_clear`.
+- Checklist state persists to `HAYDAY_LIST_FILE` (default
+  `~/.hayday-mcp/list.json`), written atomically.
+- `list_add` / `list_set_amount` validate product names against live game data,
+  so the list only ever holds real goods.
+
+## [1.0.0] - 2026-11-13
+
+### Added
+- Initial release.
+- MCP server over stdio (JSON-RPC 2.0, newline-delimited), zero runtime dependencies.
+- Live data fetch from hayday.info with a 1-hour in-memory TTL cache.
+- Eleven tools: `search_items`, `get_item`, `get_machines`, `get_by_machine`,
+  `get_crops`, `get_animals`, `get_level_unlocks`, `get_unlocks_upto`,
+  `get_best_profit`, `compare_profit`, `clear_cache`.
+- `get_best_profit` accepts optional `maxLevel` and `machine` filters in
+  addition to `limit` and `minLevel`, so "best crop up to level 15" is a single
+  call.
+- Data normalization strips the trailing zero-width characters present on some
+  upstream product names.
+- Smoke tests for the data/cache layer and the MCP protocol layer
+  (`node --test`).

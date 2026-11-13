@@ -1,0 +1,43 @@
+{
+  "name": "haydaytool",
+  "version": "1.2.0",
+  "description": "HayDay Tool — a read-only MCP server that serves live HayDay game data (crops, products, animals, machines, level unlocks, profit) plus a needed-goods checklist, as tools for any MCP client.",
+  "license": "MIT",
+  "author": "haydaylover",
+  "homepage": "https://github.com/biblestudytn26/HayDayTool#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/biblestudytn26/HayDayTool.git"
+  },
+  "bugs": {
+    "url": "https://github.com/biblestudytn26/HayDayTool/issues"
+  },
+  "type": "commonjs",
+  "main": "server.js",
+  "bin": {
+    "haydaytool": "server.js"
+  },
+  "files": [
+    "server.js",
+    "lib/",
+    "assets/",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test \"test/**/*.test.js\""
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "hayday",
+    "supercell",
+    "game-data",
+    "stdio"
+  ],
+  "dependencies": {}
+}
