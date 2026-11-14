@@ -4,6 +4,34 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-11-14
+
+### Changed
+- **Mobile-app redesign.** The web app now uses a native app shell: a sticky top
+  app bar, a status strip, a scrollable content area, and a fixed bottom tab bar
+  with icons (Browse · Profit · Unlocks · Planner · List) and a count badge.
+  Result tables became tap-friendly list rows (name, machine chip, level/time,
+  profit/hr, and a round "+" button), Browse gained a sort control, inputs and
+  tap targets were enlarged for touch, and safe-area insets are respected. On
+  desktop it renders as a centered phone frame. Added PWA/theme-color meta tags.
+
+## [2.0.0] - 2026-11-13
+
+### Added
+- **HayDay Tool web app** (`index.html`) — a self-contained static page: browse
+  all items with search/sort/filter, a best-profit finder, level-unlock lookups,
+  and the needed-goods checklist with barn/silo space tracking and a one-tap
+  copy export. Saves the list in the browser (localStorage). Reads live data
+  from hayday.info via a CORS proxy with fallbacks, caching, and manual refresh.
+- **Recipe Planner** — enter target products and quantities and get the full
+  raw-material rollup (expanded recursively down to crops, tree/bush fruit, and
+  animal products), totalled by barn/silo space, with copy-to-clipboard and
+  "add raw materials to My List." Recipe data ships in `data/recipes.js`,
+  sourced from the Hay Day Fandom Wiki (via drarvindc/hayday-tracker).
+- Project logo (`assets/`).
+
+The MCP server (below) is unchanged and remains available for AI clients.
+
 ## [1.2.0] - 2026-11-13
 
 ### Added

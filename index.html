@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#2E7D32">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="HayDay Tool">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="assets/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<title>HayDay Tool — Live Farm Data & Planner</title>
+<meta name="description" content="Live HayDay game data — search items, find the best profit, see what unlocks at your level, and build a needed-goods checklist that tracks your barn and silo space.">
+<style>
+  :root{
+    --sky:#7FC7F5; --grass:#6DB63C; --leaf:#2E7D32; --leaf-d:#246026;
+    --gold:#E09A1E; --grain:#F4C542; --cream:#FFF8EC;
+    --ink:#1f2b18; --muted:#6b7a62; --line:#e8eee0; --line2:#f0f4ea;
+    --bg:#eef4e6; --card:#ffffff; --danger:#c0432f; --ok:#2e9e4f;
+    --shadow:0 1px 3px rgba(20,40,10,.06);
+    --radius:18px; --tabh:60px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--ink); background:#d7e3ca; line-height:1.4; -webkit-text-size-adjust:100%;
+  }
+  a{color:var(--leaf)}
+  button{font-family:inherit;cursor:pointer}
+
+  /* App shell — a phone frame on desktop, full-bleed on mobile */
+  .wrap{
+    max-width:460px; margin:0 auto; height:100dvh; display:flex; flex-direction:column;
+    position:relative; overflow:hidden; background:var(--bg);
+    background-image:radial-gradient(120% 55% at 50% -8%, rgba(127,199,245,.38), transparent 62%);
+    box-shadow:0 0 0 1px rgba(20,40,10,.05), 0 24px 70px rgba(20,40,10,.22);
+  }
+
+  /* App bar */
+  .appbar{
+    flex:0 0 auto; display:flex; align-items:center; gap:11px; z-index:20;
+    padding:calc(env(safe-area-inset-top) + 11px) 14px 11px;
+    background:rgba(255,255,255,.85); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);
+  }
+  .appbar .logo{width:38px;height:38px;border-radius:11px;flex:0 0 auto;box-shadow:0 2px 6px rgba(20,40,10,.2)}
+  .appbar .ttl{min-width:0;flex:1}
+  .appbar h1{font-size:19px;margin:0;letter-spacing:-.3px;line-height:1.05}
+  .appbar h1 .t{color:var(--gold)}
+  .appbar .sub{margin:2px 0 0;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .iconbtn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--leaf-d);
+    font-size:18px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .iconbtn:active{background:#eef5e6;transform:scale(.96)}
+
+  /* Status strip */
+  .statusbar{flex:0 0 auto;padding:7px 15px;font-size:11.5px;color:var(--muted);
+    background:rgba(255,255,255,.5);border-bottom:1px solid var(--line2);display:flex;align-items:center;gap:6px}
+  .statusbar b{color:var(--leaf-d)}
+  .statusbar.warn{color:#8a5a00;background:#fff6e0;border-bottom-color:#f3dca0}
+
+  /* Scroll area */
+  #main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    padding:13px 12px calc(var(--tabh) + env(safe-area-inset-bottom) + 20px)}
+
+  /* Cards */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px;margin-bottom:12px;box-shadow:var(--shadow)}
+  .card h2{margin:0 0 3px;font-size:16px}
+  .card .sub{color:var(--muted);font-size:12.5px;margin:0 0 12px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  label.fld{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+  input,select{font-family:inherit;font-size:16px;color:var(--ink);background:#fff;
+    border:1px solid var(--line);border-radius:12px;padding:11px 12px;outline:none;min-height:44px}
+  input:focus,select:focus{border-color:var(--grass);box-shadow:0 0 0 3px rgba(109,182,60,.16)}
+  input[type=number]{width:86px}
+  .search{flex:1 1 180px;min-width:140px}
+  select{-webkit-appearance:none;appearance:none;padding-right:32px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7a62' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 11px center}
+
+  /* Buttons */
+  .btn{border:1px solid var(--line);background:#fff;color:var(--ink);padding:11px 14px;border-radius:12px;
+    font-size:14px;font-weight:650;min-height:44px;transition:transform .1s}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--leaf);border-color:var(--leaf);color:#fff}
+  .btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+  .btn.sm{padding:8px 12px;font-size:13px;min-height:40px;border-radius:11px}
+  .btn:disabled{opacity:.5}
+
+  /* Item list rows */
+  .list{display:flex;flex-direction:column}
+  .item-row{display:flex;align-items:center;gap:11px;padding:11px 2px;border-bottom:1px solid var(--line2)}
+  .item-row:last-child{border-bottom:0}
+  .ir-rank{flex:0 0 auto;width:20px;text-align:center;color:var(--muted);font-weight:800;font-size:13px}
+  .ir-main{flex:1;min-width:0}
+  .ir-name{font-weight:650;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ir-meta{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ir-prof{flex:0 0 auto;text-align:right;font-weight:800;font-size:14px;font-variant-numeric:tabular-nums}
+  .ir-prof small{display:block;font-weight:600;color:var(--muted);font-size:9.5px;letter-spacing:.03em}
+  .chip{display:inline-block;background:#edf5e4;color:var(--leaf-d);border-radius:6px;padding:1px 6px;font-size:11px;font-weight:700}
+  .machine-chip{display:inline-block;background:#edf5e4;color:var(--leaf-d);border-radius:6px;padding:1px 7px;font-size:12px;font-weight:600}
+  .addbtn{flex:0 0 auto;width:34px;height:34px;border-radius:50%;border:0;background:var(--leaf);color:#fff;
+    font-size:21px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0}
+  .addbtn:active{background:var(--leaf-d);transform:scale(.92)}
+  .prof-pos{color:var(--ok)} .prof-neg{color:var(--danger)}
+  .empty{padding:34px 12px;text-align:center;color:var(--muted);font-size:14px}
+
+  /* Checklist summary */
+  .summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+  .store{background:#f5faef;border:1px solid var(--line);border-radius:14px;padding:11px}
+  .store .lab{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;margin-bottom:8px;gap:6px}
+  .store .lab b{font-size:14px}
+  .store .lab .left{color:var(--muted)}
+  .bar{height:11px;background:#e7efdd;border-radius:999px;overflow:hidden}
+  .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--grass),#9bd255);border-radius:999px;transition:width .2s}
+  .bar.over > i{background:linear-gradient(90deg,#e0803a,var(--danger))}
+  .totals{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:6px}
+  .totals b{color:var(--ink)}
+
+  /* checklist / planner rows */
+  .grp-title{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+    margin:14px 2px 7px;font-weight:800}
+  .li{display:flex;align-items:center;gap:10px;padding:10px 11px;border:1px solid var(--line);
+    border-radius:13px;margin-bottom:7px;background:#fff}
+  .li.done{background:#f4f8ef;border-color:#dbe8cc}
+  .li input[type=checkbox]{width:24px;height:24px;accent-color:var(--leaf);flex:0 0 auto;min-height:0}
+  .li .amt{width:62px;min-height:38px;padding:7px 8px;text-align:center}
+  .li .nm{flex:1;min-width:0;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .li.done .nm{text-decoration:line-through;color:var(--muted)}
+  .li .st{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;flex:0 0 auto}
+  .li .x{border:0;background:transparent;color:#b9c3ad;font-size:22px;line-height:1;padding:4px 8px;border-radius:9px;flex:0 0 auto}
+  .li .x:active{background:#fbece9;color:var(--danger)}
+
+  .target-chip{display:inline-flex;align-items:center;gap:6px;background:#edf5e4;color:var(--leaf-d);
+    border:1px solid #d7e7c6;border-radius:999px;padding:6px 8px 6px 13px;font-size:13px;font-weight:650}
+  .target-chip button{border:0;background:#cfe0ba;color:var(--leaf-d);width:22px;height:22px;border-radius:50%;
+    font-size:15px;line-height:1;padding:0}
+
+  /* Bottom tab bar */
+  .tabbar{flex:0 0 auto;display:flex;z-index:20;
+    height:calc(var(--tabh) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);
+    background:rgba(255,255,255,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    border-top:1px solid var(--line)}
+  .tabbar button{flex:1;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:3px;color:#9aa891;font-size:10px;font-weight:700;letter-spacing:.01em;padding:0;position:relative}
+  .tabbar button .ico{width:24px;height:24px;display:flex;align-items:center;justify-content:center}
+  .tabbar button .ico svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  .tabbar button.active{color:var(--leaf)}
+  .tabbar .badge{position:absolute;top:5px;left:50%;margin-left:4px;min-width:16px;height:16px;padding:0 4px;
+    border-radius:999px;background:var(--gold);color:#fff;font-size:10px;font-weight:800;line-height:16px;text-align:center}
+  .tabbar .badge:empty{display:none}
+
+  .toast{position:fixed;left:50%;bottom:calc(var(--tabh) + env(safe-area-inset-bottom) + 18px);
+    transform:translateX(-50%) translateY(16px);
+    background:var(--ink);color:#fff;padding:11px 18px;border-radius:13px;font-size:14px;font-weight:650;
+    opacity:0;pointer-events:none;transition:.22s;box-shadow:0 8px 30px rgba(0,0,0,.28);z-index:60}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .hide{display:none!important}
+  .foot{color:var(--muted);font-size:11px;text-align:center;margin:18px 4px 2px;line-height:1.6}
+  .spinner{width:14px;height:14px;border:2.5px solid #cfe3bb;border-top-color:var(--leaf);
+    border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:-2px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="appbar">
+      <svg class="logo" viewBox="0 0 512 512" aria-hidden="true">
+        <defs>
+          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#7FC7F5"/><stop offset="0.55" stop-color="#8FD06A"/><stop offset="1" stop-color="#6DB63C"/>
+          </linearGradient>
+          <radialGradient id="sun" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0" stop-color="#FFE48A"/><stop offset="1" stop-color="#FFC930"/>
+          </radialGradient>
+        </defs>
+        <rect x="15.36" y="15.36" width="481.28" height="481.28" rx="107.52" fill="url(#sky)"/>
+        <circle cx="133.12" cy="122.88" r="71.68" fill="#FFF2B0" opacity="0.45"/>
+        <circle cx="133.12" cy="122.88" r="47.616" fill="url(#sun)"/>
+        <path d="M408.76,270.66 L408.76,302.78 L379.90,306.34 L373.11,331.67 L396.32,349.19 L380.27,377.00 L353.49,365.66 L334.94,384.21 L346.28,410.99 L318.47,427.04 L300.95,403.83 L275.62,410.62 L272.06,439.48 L239.94,439.48 L236.38,410.62 L211.05,403.83 L193.53,427.04 L165.72,410.99 L177.06,384.21 L158.51,365.66 L131.73,377.00 L115.68,349.19 L138.89,331.67 L132.10,306.34 L103.24,302.78 L103.24,270.66 L132.10,267.10 L138.89,241.77 L115.68,224.25 L131.73,196.44 L158.51,207.78 L177.06,189.23 L165.72,162.45 L193.53,146.40 L211.05,169.61 L236.38,162.82 L239.94,133.96 L272.06,133.96 L275.62,162.82 L300.95,169.61 L318.47,146.40 L346.28,162.45 L334.94,189.23 L353.49,207.78 L380.27,196.44 L396.32,224.25 L373.11,241.77 L379.90,267.10 Z M325.12,286.72 A69.12,69.12 0 1,0 186.88,286.72 A69.12,69.12 0 1,0 325.12,286.72 Z" fill="#FFF8EC" stroke="#E4D2A8" stroke-width="6.144" fill-rule="evenodd"/>
+        <line x1="256" y1="368.64" x2="256" y2="218.8" stroke="#B9791F" stroke-width="10" stroke-linecap="round"/>
+        <g fill="#F4C542" stroke="#D99A24" stroke-width="3">
+          <ellipse cx="244.9" cy="358.6" rx="16" ry="8.5" transform="rotate(38 244.9 358.6)"/><ellipse cx="267.1" cy="358.6" rx="16" ry="8.5" transform="rotate(-38 267.1 358.6)"/>
+          <ellipse cx="243.4" cy="324.5" rx="16" ry="8.5" transform="rotate(38 243.4 324.5)"/><ellipse cx="268.6" cy="324.5" rx="16" ry="8.5" transform="rotate(-38 268.6 324.5)"/>
+          <ellipse cx="241.9" cy="290.4" rx="16" ry="8.5" transform="rotate(38 241.9 290.4)"/><ellipse cx="270.1" cy="290.4" rx="16" ry="8.5" transform="rotate(-38 270.1 290.4)"/>
+          <ellipse cx="241.9" cy="257.6" rx="16" ry="8.5" transform="rotate(38 241.9 257.6)"/><ellipse cx="270.1" cy="257.6" rx="16" ry="8.5" transform="rotate(-38 270.1 257.6)"/>
+          <ellipse cx="243.4" cy="226.2" rx="16" ry="8.5" transform="rotate(38 243.4 226.2)"/><ellipse cx="268.6" cy="226.2" rx="16" ry="8.5" transform="rotate(-38 268.6 226.2)"/>
+          <ellipse cx="256" cy="202.8" rx="11" ry="20"/>
+        </g>
+      </svg>
+      <div class="ttl">
+        <h1>HayDay <span class="t">Tool</span></h1>
+        <div class="sub">Live farm data &amp; planner</div>
+      </div>
+      <button class="iconbtn" id="refreshBtn" title="Fetch the latest data" aria-label="Refresh">↻</button>
+  </header>
+  <div class="statusbar" id="dataStatus"><span class="spinner"></span> Loading data…</div>
+
+  <main id="main">
+
+  <!-- BROWSE -->
+  <section id="tab-browse">
+    <div class="card">
+      <input class="search" id="q" type="search" placeholder="Search items or machines…" style="width:100%">
+      <div class="row" style="margin-top:8px">
+        <select id="quick" style="flex:1 1 44%">
+          <option value="">All items</option>
+          <option value="__crops">🌾 Crops &amp; trees</option>
+          <option value="__animals">🐄 Animal products</option>
+        </select>
+        <select id="machineFilter" style="flex:1 1 44%"><option value="">All machines</option></select>
+        <select id="sort" style="flex:1 1 100%">
+          <option value="profit_per_hour|-1">Sort: Profit/hr (high→low)</option>
+          <option value="level|1">Sort: Level (low→high)</option>
+          <option value="level|-1">Sort: Level (high→low)</option>
+          <option value="price|-1">Sort: Price (high→low)</option>
+          <option value="xp|-1">Sort: XP (high→low)</option>
+          <option value="product|1">Sort: Name (A–Z)</option>
+        </select>
+      </div>
+    </div>
+    <div class="card">
+      <div class="list" id="browseBody"></div>
+      <div class="empty hide" id="browseEmpty">No items match your search.</div>
+    </div>
+  </section>
+
+  <!-- PROFIT -->
+  <section id="tab-profit" class="hide">
+    <div class="card">
+      <h2>Best profit per hour</h2>
+      <p class="sub">Rank items by profit/hour. Narrow by level range or machine — e.g. the best crop you can grow up to level 15.</p>
+      <div class="row">
+        <label class="fld">Show top<input type="number" id="pLimit" value="15" min="1" max="100"></label>
+        <label class="fld">Min level<input type="number" id="pMin" value="1" min="1"></label>
+        <label class="fld">Max level<input type="number" id="pMax" placeholder="any" min="1"></label>
+        <label class="fld" style="flex:1;min-width:150px">Machine
+          <select id="pMachine"><option value="">Any machine</option></select>
+        </label>
+      </div>
+    </div>
+    <div class="card">
+      <div class="list" id="profitBody"></div>
+    </div>
+  </section>
+
+  <!-- UNLOCKS -->
+  <section id="tab-unlocks" class="hide">
+    <div class="card">
+      <h2>What unlocks at a level</h2>
+      <p class="sub">See exactly what opens up at a level, or everything available up to it.</p>
+      <div class="row">
+        <label class="fld">Level<input type="number" id="uLevel" value="20" min="1"></label>
+        <button class="btn primary" id="uAt">At this level</button>
+        <button class="btn" id="uUpto">Up to this level</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="list" id="unlockBody"></div>
+      <div class="empty hide" id="unlockEmpty">Nothing here — try another level.</div>
+    </div>
+  </section>
+
+  <!-- PLANNER -->
+  <section id="tab-planner" class="hide">
+    <div class="card">
+      <h2>Recipe planner</h2>
+      <p class="sub">Add what you want to make and see every raw ingredient to gather — crops, tree &amp; bush fruit, and animal products — with the barn &amp; silo space it takes.</p>
+      <div class="row">
+        <input class="search" id="planItem" list="allItems" placeholder="What to make — e.g. Cake">
+        <label class="fld">Qty<input type="number" id="planQty" value="1" min="1"></label>
+        <button class="btn primary" id="planAdd">+ Add</button>
+        <span style="flex:1"></span>
+        <button class="btn sm" id="planFromList" title="Use the goods on your checklist as the things to make">Use my checklist</button>
+        <button class="btn sm ghost" id="planClear">Clear</button>
+      </div>
+      <div id="planTargets"></div>
+    </div>
+    <div class="card" id="planResultCard">
+      <div id="planResult"><div class="empty">Add something to make above.</div></div>
+    </div>
+  </section>
+
+  <!-- LIST -->
+  <section id="tab-list" class="hide">
+    <div class="card">
+      <h2>Needed-goods checklist</h2>
+      <p class="sub">Add what you need, tick it off as you collect it, and watch your barn &amp; silo space. Saved in this browser.</p>
+
+      <div class="summary" id="summary"></div>
+
+      <div class="row" style="margin-bottom:10px">
+        <input class="search" id="addItem" list="allItems" placeholder="Add a good — e.g. Bread">
+        <datalist id="allItems"></datalist>
+        <label class="fld">Amount<input type="number" id="addAmt" value="1" min="1"></label>
+        <button class="btn primary" id="addBtn">+ Add</button>
+      </div>
+      <div class="row">
+        <label class="fld">Barn size<input type="number" id="capBarn" min="0"></label>
+        <label class="fld">Silo size<input type="number" id="capSilo" min="0"></label>
+        <button class="btn sm" id="saveCap">Save sizes</button>
+        <span style="flex:1"></span>
+        <button class="btn sm" id="copyBtn">📋 Copy list</button>
+        <button class="btn sm ghost" id="clearBtn">Clear</button>
+      </div>
+    </div>
+
+    <div class="card" id="listCard">
+      <div id="listItems"></div>
+      <div class="empty" id="listEmpty">Your list is empty. Add goods above, or hit “+ List” on any item in Browse.</div>
+    </div>
+  </section>
+
+  <div class="foot">
+    Data from <a href="https://hayday.info" target="_blank" rel="noopener">hayday.info</a> · not affiliated with Supercell.<br>HayDay is a trademark of Supercell Oy.
+  </div>
+  </main>
+
+  <nav class="tabbar" id="tabs">
+    <button data-tab="browse" class="active">
+      <span class="ico"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>Browse</button>
+    <button data-tab="profit">
+      <span class="ico"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v5h-5"/></svg></span>Profit</button>
+    <button data-tab="unlocks">
+      <span class="ico"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.6-1.7"/></svg></span>Unlocks</button>
+    <button data-tab="planner">
+      <span class="ico"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h3M13 11h3M8 15h3M13 15h3"/></svg></span>Planner</button>
+    <button data-tab="list">
+      <span class="ico"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg></span>List<span class="badge" id="listCount"></span></button>
+  </nav>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="data/recipes.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* ----------------------------- config / state ----------------------------- */
+const API = "https://hayday.info/api/production-data";
+// hayday.info has no CORS headers, so a browser can't fetch it directly.
+// These read-only proxies relay the JSON. Tried in order, across two rounds.
+const PROXIES = [
+  { name:"allorigins-raw", make:u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u), parse:t=>JSON.parse(t) },
+  { name:"codetabs",       make:u=>"https://api.codetabs.com/v1/proxy/?quest="+u,               parse:t=>JSON.parse(t) },
+  { name:"allorigins-get", make:u=>"https://api.allorigins.win/get?url="+encodeURIComponent(u),  parse:t=>JSON.parse(JSON.parse(t).contents) },
+  { name:"thingproxy",     make:u=>"https://thingproxy.freeboard.io/fetch/"+u,                   parse:t=>JSON.parse(t) },
+  { name:"direct",         make:u=>u,                                                            parse:t=>JSON.parse(t) },
+];
+const DATA_KEY = "haydaytool.data.v1";
+const LIST_KEY = "haydaytool.list.v1";
+const TTL = 60 * 60 * 1000; // 1h
+const CROP_MACHINES = ["crops", "trees & bushes"];
+const ANIMAL_MACHINES = ["animal products"];
+const ZW = /[​-‏‪-‮⁠﻿]/g;
+
+let DATA = [];
+let list = loadList();
+let browseSort = { key: "profit_per_hour", dir: -1 };
+
+// Recipe data (shipped in data/recipes.js; sourced from the Hay Day Fandom Wiki).
+const RECIPES = (window.HAYDAY_RECIPES && window.HAYDAY_RECIPES.items) ? window.HAYDAY_RECIPES.items : {};
+const NAME_TO_ID = {};
+for (const id in RECIPES) NAME_TO_ID[RECIPES[id].name.toLowerCase()] = id;
+const RAW_MACHINES = new Set(["crops", "trees & bushes", "animal products"]);
+let NAME_MACHINE = {};   // product name -> machine, from live data
+let planTargets = [];    // [{name, qty}]
+
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const clean = v => typeof v === "string" ? v.replace(ZW, "").trim() : v;
+const storageOf = m => String(m||"").toLowerCase() === "crops" ? "silo" : "barn";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ----------------------------- data loading ------------------------------- */
+function normalize(a){
+  return a.map(r => ({
+    product: clean(r.product), machine: clean(r.machine),
+    level: r.level, price: r.price, time_min: r.time_min,
+    xp: r.xp, profit_per_hour: r.profit_per_hour, xp_per_hour: r.xp_per_hour,
+  })).filter(i => i.product);
+}
+
+async function tryOnce(p){
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 13000);
+  try{
+    const res = await fetch(p.make(API), { signal: ctrl.signal });
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const arr = p.parse(await res.text());
+    if(!Array.isArray(arr) || !arr.length) throw new Error("bad shape");
+    return arr;
+  } finally { clearTimeout(t); }
+}
+
+async function fetchLive(){
+  let lastErr;
+  for(let round=0; round<2; round++){
+    for(const p of PROXIES){
+      try{ return await tryOnce(p); }
+      catch(e){ lastErr = e; }
+    }
+    await new Promise(r=>setTimeout(r, 800));
+  }
+  throw lastErr || new Error("unreachable");
+}
+
+async function loadData({ force=false } = {}){
+  const cached = readCache();
+  if(cached && !force){
+    DATA = cached.data;
+    onData();
+    setStatus(`<b>${DATA.length}</b> items · cached ${ago(cached.at)}`, false);
+    // refresh quietly in the background
+    refreshQuiet();
+    return;
+  }
+  setStatus(`<span class="spinner"></span> Loading data…`, false);
+  try{
+    const raw = await fetchLive();
+    DATA = normalize(raw);
+    writeCache(DATA);
+    onData();
+    setStatus(`<b>${DATA.length}</b> items · live just now`, false);
+  }catch(e){
+    if(cached){
+      DATA = cached.data; onData();
+      setStatus(`<b>${DATA.length}</b> items · showing saved copy (live fetch failed)`, true);
+    }else{
+      setStatus(`Couldn't load data — check connection, then Refresh`, true);
+    }
+  }
+}
+
+async function refreshQuiet(){
+  try{
+    const raw = await fetchLive();
+    DATA = normalize(raw); writeCache(DATA); onData();
+    setStatus(`<b>${DATA.length}</b> items · live just now`, false);
+  }catch(e){ /* keep cached */ }
+}
+
+function readCache(){
+  try{
+    const o = JSON.parse(localStorage.getItem(DATA_KEY));
+    if(o && Array.isArray(o.data) && o.data.length) return o;
+  }catch(e){}
+  return null;
+}
+function writeCache(data){
+  try{ localStorage.setItem(DATA_KEY, JSON.stringify({ at: Date.now(), data })); }catch(e){}
+}
+function ago(ts){
+  const s = Math.round((Date.now()-ts)/1000);
+  if(s<60) return "just now";
+  if(s<3600) return Math.floor(s/60)+"m ago";
+  if(s<86400) return Math.floor(s/3600)+"h ago";
+  return Math.floor(s/86400)+"d ago";
+}
+function setStatus(html, warn){
+  const el = $("#dataStatus");
+  el.innerHTML = html; el.classList.toggle("warn", !!warn);
+}
+
+/* called whenever DATA changes */
+function onData(){
+  NAME_MACHINE = {};
+  for(const i of DATA) NAME_MACHINE[i.product.toLowerCase()] = i.machine;
+  fillMachineSelects();
+  fillDatalist();
+  renderBrowse();
+  renderProfit();
+  if(!$("#tab-planner").classList.contains("hide")) renderPlanner();
+}
+
+/* ----------------------------- helpers ------------------------------------ */
+const fmtTime = m => m==null ? "—" : m>=1440 ? (m/1440).toFixed(m%1440?1:0)+"d"
+  : m>=60 ? Math.floor(m/60)+"h"+(m%60?" "+(m%60)+"m":"") : m+"m";
+const fmtNum = n => n==null ? "—" : Math.round(n).toLocaleString();
+const profCell = p => {
+  if(p==null) return "—";
+  const c = p<0 ? "prof-neg" : "prof-pos";
+  return `<span class="${c}">${Math.round(p).toLocaleString()}</span>`;
+};
+function machines(){ return [...new Set(DATA.map(i=>i.machine))].sort((a,b)=>a.localeCompare(b)); }
+function fillMachineSelects(){
+  const opts = machines().map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join("");
+  for(const id of ["#machineFilter","#pMachine"]){
+    const el = $(id), cur = el.value;
+    el.innerHTML = (id==="#machineFilter"?'<option value="">All machines</option>':'<option value="">Any machine</option>') + opts;
+    el.value = cur;
+  }
+}
+function fillDatalist(){
+  $("#allItems").innerHTML = DATA.map(i=>`<option value="${esc(i.product)}">`).join("");
+}
+
+/* ----------------------------- BROWSE ------------------------------------- */
+const profNum = p => p==null ? "—" : Math.round(p).toLocaleString();
+const profCls = p => (p!=null && p<0) ? "prof-neg" : "prof-pos";
+function itemRow(i, meta){
+  return `<div class="item-row">
+    <div class="ir-main">
+      <div class="ir-name">${esc(i.product)}</div>
+      <div class="ir-meta">${meta}</div>
+    </div>
+    <div class="ir-prof ${profCls(i.profit_per_hour)}">${profNum(i.profit_per_hour)}<small>coin/hr</small></div>
+    <button class="addbtn add" data-p="${esc(i.product)}" aria-label="Add to list">+</button>
+  </div>`;
+}
+
+function renderBrowse(){
+  const q = $("#q").value.trim().toLowerCase();
+  const mf = $("#machineFilter").value.toLowerCase();
+  const quick = $("#quick").value;
+  let rows = DATA.slice();
+
+  if(quick==="__crops") rows = rows.filter(i=>CROP_MACHINES.includes(i.machine.toLowerCase()));
+  else if(quick==="__animals") rows = rows.filter(i=>ANIMAL_MACHINES.includes(i.machine.toLowerCase()));
+  if(mf) rows = rows.filter(i=>i.machine.toLowerCase()===mf);
+  if(q) rows = rows.filter(i=>i.product.toLowerCase().includes(q)||i.machine.toLowerCase().includes(q));
+
+  const [key, ds] = ($("#sort").value || "profit_per_hour|-1").split("|");
+  const dir = +ds || -1;
+  rows.sort((a,b)=>{
+    let x=a[key], y=b[key];
+    if(typeof x==="string") return x.localeCompare(y)*dir;
+    x=x==null?-Infinity:x; y=y==null?-Infinity:y;
+    return (x-y)*dir;
+  });
+
+  $("#browseEmpty").classList.toggle("hide", rows.length>0);
+  $("#browseBody").innerHTML = rows.map(i=>
+    itemRow(i, `<span class="chip">${esc(i.machine)}</span> · Lv ${i.level??"—"} · ${fmtTime(i.time_min)}`)
+  ).join("");
+}
+
+/* ----------------------------- PROFIT ------------------------------------- */
+function renderProfit(){
+  if(!DATA.length) return;
+  const limit = +$("#pLimit").value || 15;
+  const min = +$("#pMin").value || 1;
+  const max = $("#pMax").value ? +$("#pMax").value : Infinity;
+  const mac = $("#pMachine").value.toLowerCase();
+  let rows = DATA.filter(i=>typeof i.profit_per_hour==="number" && i.level>=min && i.level<=max);
+  if(mac) rows = rows.filter(i=>i.machine.toLowerCase()===mac);
+  rows.sort((a,b)=>b.profit_per_hour-a.profit_per_hour);
+  rows = rows.slice(0, limit);
+  $("#profitBody").innerHTML = rows.map((i,n)=>`
+    <div class="item-row">
+      <div class="ir-rank">${n+1}</div>
+      <div class="ir-main">
+        <div class="ir-name">${esc(i.product)}</div>
+        <div class="ir-meta"><span class="chip">${esc(i.machine)}</span> · Lv ${i.level??"—"} · ${fmtNum(i.xp_per_hour)} xp/hr</div>
+      </div>
+      <div class="ir-prof ${profCls(i.profit_per_hour)}">${profNum(i.profit_per_hour)}<small>coin/hr</small></div>
+      <button class="addbtn add" data-p="${esc(i.product)}" aria-label="Add to list">+</button>
+    </div>`).join("") || `<div class="empty">No items in that range.</div>`;
+}
+
+/* ----------------------------- UNLOCKS ------------------------------------ */
+function renderUnlocks(mode){
+  const lvl = +$("#uLevel").value || 1;
+  let rows = mode==="upto"
+    ? DATA.filter(i=>i.level<=lvl).sort((a,b)=>a.level-b.level||a.product.localeCompare(b.product))
+    : DATA.filter(i=>i.level===lvl).sort((a,b)=>a.product.localeCompare(b.product));
+  $("#unlockEmpty").classList.toggle("hide", rows.length>0);
+  $("#unlockBody").innerHTML = rows.map(i=>
+    itemRow(i, `<span class="chip">${esc(i.machine)}</span> · Lv ${i.level} · ${fmtNum(i.price)} coins`)
+  ).join("");
+}
+
+/* ----------------------------- LIST --------------------------------------- */
+function loadList(){
+  try{
+    const o = JSON.parse(localStorage.getItem(LIST_KEY));
+    if(o && o.capacity && Array.isArray(o.items)) return o;
+  }catch(e){}
+  return { capacity:{ barn:1000, silo:1000 }, items:[] };
+}
+function saveList(){ try{ localStorage.setItem(LIST_KEY, JSON.stringify(list)); }catch(e){} }
+
+function findInData(name){
+  const q = clean(name).toLowerCase();
+  return DATA.find(i=>i.product.toLowerCase()===q) || DATA.find(i=>i.product.toLowerCase().includes(q)) || null;
+}
+function addToList(name, amount){
+  const item = findInData(name);
+  if(!item){ toast(`"${name}" isn't a known item`); return; }
+  const n = Math.max(1, Math.floor(amount||1));
+  const ex = list.items.find(x=>x.product.toLowerCase()===item.product.toLowerCase());
+  if(ex){ ex.amount += n; ex.machine = item.machine; }
+  else list.items.push({ product:item.product, machine:item.machine, amount:n, checked:false });
+  saveList(); renderList(); updateListCount();
+  toast(`Added ${n}× ${item.product}`);
+}
+function summarize(){
+  const used={barn:0,silo:0}; let total=0, got=0;
+  for(const it of list.items){
+    const s=storageOf(it.machine); used[s]+=it.amount; total+=it.amount; if(it.checked) got+=it.amount;
+  }
+  return { used, remaining:{barn:list.capacity.barn-used.barn, silo:list.capacity.silo-used.silo},
+    total, got, need:total-got, items:list.items.length };
+}
+function renderSummary(){
+  const s=summarize();
+  const block=(name,key)=>{
+    const cap=list.capacity[key], u=s.used[key], rem=cap-u;
+    const pct=cap>0?Math.min(100, u/cap*100):0;
+    const over=rem<0;
+    return `<div class="store">
+      <div class="lab"><span class="left">${name}</span><b>${u.toLocaleString()} / ${cap.toLocaleString()}</b></div>
+      <div class="bar ${over?'over':''}"><i style="width:${pct}%"></i></div>
+      <div class="totals"><span>${over?`<b style="color:var(--danger)">Over by ${(-rem).toLocaleString()}</b>`:`<b>${rem.toLocaleString()}</b> space left`}</span></div>
+    </div>`;
+  };
+  $("#summary").innerHTML = block("🏚️ Barn","barn") + block("🌾 Silo","silo") +
+    `<div class="totals" style="grid-column:1/-1">
+       <span><b>${s.items}</b> goods</span>
+       <span><b>${s.total.toLocaleString()}</b> units total</span>
+       <span><b style="color:var(--ok)">${s.got.toLocaleString()}</b> collected</span>
+       <span><b>${s.need.toLocaleString()}</b> still needed</span>
+     </div>`;
+}
+function renderList(){
+  renderSummary();
+  $("#capBarn").value = list.capacity.barn;
+  $("#capSilo").value = list.capacity.silo;
+  const empty = list.items.length===0;
+  $("#listEmpty").classList.toggle("hide", !empty);
+  if(empty){ $("#listItems").innerHTML=""; return; }
+  let html="";
+  for(const store of ["barn","silo"]){
+    const grp=list.items.filter(i=>storageOf(i.machine)===store);
+    if(!grp.length) continue;
+    html += `<div class="grp-title">${store==="barn"?"🏚️ Barn":"🌾 Silo"}</div>`;
+    for(const it of grp){
+      const id = esc(it.product);
+      html += `<div class="li ${it.checked?'done':''}">
+        <input type="checkbox" data-chk="${id}" ${it.checked?'checked':''}>
+        <input type="number" class="amt" min="1" value="${it.amount}" data-amt="${id}">
+        <span class="nm">${esc(it.product)}</span>
+        <span class="st">${store}</span>
+        <button class="x" data-del="${id}" title="Remove">×</button>
+      </div>`;
+    }
+  }
+  $("#listItems").innerHTML = html;
+}
+function updateListCount(){
+  const n=list.items.length;
+  $("#listCount").textContent = n ? String(n) : "";
+}
+function exportText(){
+  const s=summarize();
+  const d=new Date().toISOString().slice(0,10);
+  const L=[`HayDay Tool — Needed Goods (${d})`,""];
+  const over=k=>s.remaining[k]<0?` — OVER by ${-s.remaining[k]}`:"";
+  L.push(`Barn: ${s.used.barn}/${list.capacity.barn} used · ${s.remaining.barn} left${over("barn")}`);
+  L.push(`Silo: ${s.used.silo}/${list.capacity.silo} used · ${s.remaining.silo} left${over("silo")}`);
+  L.push(`Collected ${s.got}/${s.total} units · ${s.items} items`);
+  if(!list.items.length){ L.push("","(list is empty)"); return L.join("\n"); }
+  for(const store of ["barn","silo"]){
+    const grp=list.items.filter(i=>storageOf(i.machine)===store);
+    if(!grp.length) continue;
+    L.push("", store.toUpperCase());
+    for(const it of grp) L.push(`[${it.checked?"x":" "}] ${it.amount}× ${it.product}`);
+  }
+  return L.join("\n");
+}
+async function copyList(){
+  const text=exportText();
+  try{ await navigator.clipboard.writeText(text); toast("List copied!"); }
+  catch(e){
+    const ta=document.createElement("textarea"); ta.value=text; document.body.appendChild(ta);
+    ta.select(); try{ document.execCommand("copy"); toast("List copied!"); }catch(_){ toast("Couldn't copy"); }
+    document.body.removeChild(ta);
+  }
+}
+
+/* ----------------------------- PLANNER ------------------------------------ */
+function machineOfName(n){ return NAME_MACHINE[String(n||"").toLowerCase()] || null; }
+function storeOfName(n, item){
+  const m = machineOfName(n);
+  if(m) return m.toLowerCase()==="crops" ? "silo" : "barn";
+  return item && item.store ? item.store : "barn";
+}
+// Raw = a crop, tree/bush fruit, or animal product (you gather it), or has no recipe.
+function isRawItem(n, item){
+  const m = machineOfName(n);
+  if(m && RAW_MACHINES.has(m.toLowerCase())) return true;
+  return !item || !item.ing || !item.ing.length;
+}
+function resolveId(nameOrId){
+  if(RECIPES[nameOrId]) return nameOrId;
+  return NAME_TO_ID[String(nameOrId||"").toLowerCase()] || null;
+}
+function expand(id, qty, raw, subs, depth, seen){
+  const item = RECIPES[id];
+  const name = item ? item.name : id;
+  if(isRawItem(name, item) || depth > 14 || seen.has(id)){
+    const key = name.toLowerCase();
+    if(!raw[key]) raw[key] = { name, qty:0, store: storeOfName(name, item) };
+    raw[key].qty += qty;
+    return;
+  }
+  subs[id] = (subs[id] || 0) + qty;           // a product you'll craft
+  const seen2 = new Set(seen); seen2.add(id);
+  for(const ing of item.ing){
+    const cid = (ing.id && RECIPES[ing.id]) ? ing.id : (resolveId(ing.name) || ing.id || ing.name);
+    expand(cid, qty * ing.q, raw, subs, depth + 1, seen2);
+  }
+}
+function computePlan(){
+  const raw = {}, subs = {};
+  for(const t of planTargets){
+    expand(resolveId(t.name) || t.name, t.qty, raw, subs, 0, new Set());
+  }
+  return { raw, subs };
+}
+const qcol = '<span style="width:64px;text-align:right;font-variant-numeric:tabular-nums;flex:0 0 auto">';
+function renderPlanTargets(){
+  const el = $("#planTargets");
+  el.innerHTML = planTargets.length
+    ? `<div class="row" style="margin-top:12px">` + planTargets.map((t,i)=>
+        `<span class="target-chip">${t.qty}× ${esc(t.name)} <button data-pt="${i}" title="Remove">×</button></span>`).join("") + `</div>`
+    : "";
+}
+function renderPlanner(){
+  renderPlanTargets();
+  const box = $("#planResult");
+  if(!planTargets.length){ box.innerHTML = `<div class="empty">Add something to make above.</div>`; return; }
+  const { raw, subs } = computePlan();
+  const arr = Object.values(raw);
+  const silo = arr.filter(r=>r.store==="silo").sort((a,b)=>b.qty-a.qty);
+  const barn = arr.filter(r=>r.store==="barn").sort((a,b)=>b.qty-a.qty);
+  const siloU = silo.reduce((s,r)=>s+r.qty,0), barnU = barn.reduce((s,r)=>s+r.qty,0);
+  const rows = a => a.map(r=>`<div class="li">${qcol}<b>${r.qty.toLocaleString()}</b></span><span class="nm">${esc(r.name)}</span></div>`).join("");
+  const subArr = Object.keys(subs).map(id=>({ name: RECIPES[id]?RECIPES[id].name:id, qty: subs[id] })).sort((a,b)=>b.qty-a.qty);
+  box.innerHTML = `
+    <h2 style="margin-bottom:10px">Raw materials to gather</h2>
+    <div class="summary">
+      <div class="store"><div class="lab"><span class="left">🌾 Silo (crops)</span><b>${siloU.toLocaleString()} units</b></div></div>
+      <div class="store"><div class="lab"><span class="left">🏚️ Barn (goods)</span><b>${barnU.toLocaleString()} units</b></div></div>
+    </div>
+    ${silo.length?`<div class="grp-title">🌾 Silo — crops</div>${rows(silo)}`:""}
+    ${barn.length?`<div class="grp-title">🏚️ Barn — fruit &amp; animal goods</div>${rows(barn)}`:""}
+    <div class="row" style="margin-top:14px">
+      <button class="btn sm" id="planCopy">📋 Copy plan</button>
+      <button class="btn sm" id="planToList">Add raw materials to My List</button>
+    </div>
+    <details style="margin-top:14px"><summary style="cursor:pointer;color:var(--muted);font-size:13px;font-weight:600">Products to craft along the way (${subArr.length})</summary>
+      <div style="margin-top:8px">${subArr.map(s=>`<div class="li">${qcol}<b>${s.qty.toLocaleString()}</b></span><span class="nm">${esc(s.name)}</span></div>`).join("")}</div>
+    </details>`;
+  $("#planCopy").addEventListener("click", copyPlan);
+  $("#planToList").addEventListener("click", planToList);
+}
+function planText(){
+  const { raw } = computePlan();
+  const arr = Object.values(raw);
+  const silo = arr.filter(r=>r.store==="silo").sort((a,b)=>b.qty-a.qty);
+  const barn = arr.filter(r=>r.store==="barn").sort((a,b)=>b.qty-a.qty);
+  const siloU = silo.reduce((s,r)=>s+r.qty,0), barnU = barn.reduce((s,r)=>s+r.qty,0);
+  const L = ["HayDay Tool — Plan", "", "Making: " + planTargets.map(t=>t.qty+"× "+t.name).join(", "), "",
+             `Silo: ${siloU} crop units · Barn: ${barnU} goods units`];
+  if(silo.length){ L.push("", "SILO (crops)"); silo.forEach(r=>L.push(`  ${r.qty}× ${r.name}`)); }
+  if(barn.length){ L.push("", "BARN (fruit & animal goods)"); barn.forEach(r=>L.push(`  ${r.qty}× ${r.name}`)); }
+  return L.join("\n");
+}
+async function copyPlan(){
+  const t = planText();
+  try{ await navigator.clipboard.writeText(t); toast("Plan copied!"); }
+  catch(e){ const ta=document.createElement("textarea"); ta.value=t; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); toast("Plan copied!"); }catch(_){ toast("Couldn't copy"); } document.body.removeChild(ta); }
+}
+function planToList(){
+  const { raw } = computePlan();
+  let n = 0;
+  for(const r of Object.values(raw)){
+    const item = findInData(r.name);
+    const machine = item ? item.machine : (machineOfName(r.name) || (r.store==="silo"?"Crops":"Animal Products"));
+    const ex = list.items.find(x=>x.product.toLowerCase()===r.name.toLowerCase());
+    if(ex){ ex.amount += r.qty; ex.machine = machine; }
+    else list.items.push({ product: item?item.product:r.name, machine, amount: r.qty, checked:false });
+    n++;
+  }
+  saveList(); updateListCount(); toast(`Added ${n} raw item(s) to My List`);
+}
+
+/* ----------------------------- UI wiring ---------------------------------- */
+function toast(msg){
+  const t=$("#toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("show"),1700);
+}
+function switchTab(name){
+  $$("#tabs button").forEach(b=>b.classList.toggle("active", b.dataset.tab===name));
+  ["browse","profit","unlocks","planner","list"].forEach(t=>$("#tab-"+t).classList.toggle("hide", t!==name));
+  if(name==="list") renderList();
+  if(name==="planner") renderPlanner();
+}
+
+// tabs
+$("#tabs").addEventListener("click", e=>{ const b=e.target.closest("button[data-tab]"); if(b) switchTab(b.dataset.tab); });
+// browse controls
+["#q","#machineFilter","#quick","#sort"].forEach(s=>{
+  $(s).addEventListener("input", renderBrowse);
+  $(s).addEventListener("change", renderBrowse);
+});
+// profit controls
+["#pLimit","#pMin","#pMax","#pMachine"].forEach(s=>$(s).addEventListener("input", renderProfit));
+// unlocks
+$("#uAt").addEventListener("click", ()=>renderUnlocks("at"));
+$("#uUpto").addEventListener("click", ()=>renderUnlocks("upto"));
+// global "+ List" delegation
+document.body.addEventListener("click", e=>{
+  const add=e.target.closest(".add"); if(add){ addToList(add.dataset.p, 1); }
+});
+// list controls
+$("#addBtn").addEventListener("click", ()=>{
+  const name=$("#addItem").value.trim(); if(!name) return;
+  addToList(name, +$("#addAmt").value||1); $("#addItem").value=""; $("#addAmt").value=1;
+});
+$("#addItem").addEventListener("keydown", e=>{ if(e.key==="Enter") $("#addBtn").click(); });
+$("#listItems").addEventListener("change", e=>{
+  const chk=e.target.closest("[data-chk]"), amt=e.target.closest("[data-amt]");
+  if(chk){ const it=list.items.find(i=>i.product===chk.dataset.chk); if(it){ it.checked=chk.checked; saveList(); renderList(); } }
+  if(amt){ const it=list.items.find(i=>i.product===amt.dataset.amt); if(it){ it.amount=Math.max(1,Math.floor(+amt.value||1)); saveList(); renderList(); } }
+});
+$("#listItems").addEventListener("click", e=>{
+  const del=e.target.closest("[data-del]");
+  if(del){ list.items=list.items.filter(i=>i.product!==del.dataset.del); saveList(); renderList(); updateListCount(); }
+});
+$("#saveCap").addEventListener("click", ()=>{
+  list.capacity.barn=Math.max(0,Math.floor(+$("#capBarn").value||0));
+  list.capacity.silo=Math.max(0,Math.floor(+$("#capSilo").value||0));
+  saveList(); renderList(); toast("Sizes saved");
+});
+$("#copyBtn").addEventListener("click", copyList);
+$("#clearBtn").addEventListener("click", ()=>{
+  if(!list.items.length) return;
+  if(confirm("Clear all goods from your list?")){ list.items=[]; saveList(); renderList(); updateListCount(); }
+});
+$("#refreshBtn").addEventListener("click", ()=>loadData({force:true}));
+
+// planner controls
+$("#planAdd").addEventListener("click", ()=>{
+  const name=$("#planItem").value.trim(); if(!name) return;
+  const item=findInData(name); const disp=item?item.product:name;
+  const qty=Math.max(1,Math.floor(+$("#planQty").value||1));
+  const ex=planTargets.find(t=>t.name.toLowerCase()===disp.toLowerCase());
+  if(ex) ex.qty+=qty; else planTargets.push({name:disp, qty});
+  $("#planItem").value=""; $("#planQty").value=1; renderPlanner();
+});
+$("#planItem").addEventListener("keydown", e=>{ if(e.key==="Enter") $("#planAdd").click(); });
+$("#planTargets").addEventListener("click", e=>{
+  const b=e.target.closest("[data-pt]"); if(b){ planTargets.splice(+b.dataset.pt,1); renderPlanner(); }
+});
+$("#planFromList").addEventListener("click", ()=>{
+  if(!list.items.length){ toast("Your checklist is empty"); return; }
+  planTargets = list.items.map(it=>({ name:it.product, qty:it.amount }));
+  renderPlanner();
+});
+$("#planClear").addEventListener("click", ()=>{ planTargets=[]; renderPlanner(); });
+
+// go
+updateListCount();
+loadData();
+})();
+</script>
+</body>
+</html>
