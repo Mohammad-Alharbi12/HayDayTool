@@ -207,6 +207,43 @@
   .sheet .how{font-weight:800;color:var(--leaf-d);font-size:12px;text-transform:uppercase;letter-spacing:.4px;margin:14px 0 7px}
   .sheet ul{margin:0;padding-left:20px}
   .sheet li{font-size:14px;line-height:1.5;margin-bottom:6px;color:var(--ink)}
+
+  /* Autocomplete that opens upward (for inputs near the bottom) */
+  .ac.up .ac-menu{top:auto;bottom:calc(100% + 5px)}
+
+  /* Inventory + screenshots */
+  .shots{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:2px 2px 4px}
+  .shot{position:relative;flex:0 0 auto;width:84px;height:84px;border-radius:12px;overflow:hidden;
+    border:1px solid var(--line);background:#f5faef;cursor:pointer}
+  .shot img{width:100%;height:100%;object-fit:cover;display:block}
+  .shot .del{position:absolute;top:3px;right:3px;width:22px;height:22px;border:0;border-radius:50%;
+    background:rgba(20,30,12,.62);color:#fff;font-size:15px;line-height:1;cursor:pointer;padding:0}
+  .shot-add{flex:0 0 auto;width:84px;height:84px;border-radius:12px;border:2px dashed #c3d6ab;
+    background:#f5faef;color:var(--leaf-d);font-size:12px;font-weight:700;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:2px;cursor:pointer}
+  .shot-add span{font-size:22px;line-height:1}
+
+  .shotview{position:fixed;inset:0;z-index:70;background:rgba(10,16,8,.93);display:none;flex-direction:column}
+  .shotview.open{display:flex}
+  .sv-top{display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:calc(10px + env(safe-area-inset-top)) 14px 10px;color:#fff}
+  .sv-top button{background:rgba(255,255,255,.16);color:#fff;border:0;border-radius:50%;width:38px;height:38px;font-size:22px;line-height:1;cursor:pointer}
+  .sv-count{color:#d6e6c6;font-size:14px;font-weight:600}
+  .sv-img{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:4px 10px}
+  .sv-img img{max-width:100%;max-height:100%;object-fit:contain;border-radius:10px}
+  .sv-log{background:#fff;border-radius:18px 18px 0 0;padding:12px 14px calc(12px + env(safe-area-inset-bottom))}
+  .sv-log .lbl{font-size:12px;font-weight:800;color:var(--leaf-d);text-transform:uppercase;letter-spacing:.3px;margin:0 0 8px}
+
+  /* qty stepper */
+  .stepper{display:flex;align-items:center;flex:0 0 auto}
+  .stepper button{width:30px;height:30px;border:1px solid var(--line);background:#fff;color:var(--leaf-d);
+    font-size:18px;line-height:1;cursor:pointer;padding:0}
+  .stepper button:first-child{border-radius:9px 0 0 9px}
+  .stepper button:last-child{border-radius:0 9px 9px 0}
+  .stepper .q{min-width:42px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums;
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);height:30px;line-height:30px}
+  .have-chip{display:inline-block;background:#e6f0da;color:var(--leaf-d);border-radius:6px;
+    padding:1px 6px;font-size:10.5px;font-weight:700;margin-left:4px;vertical-align:middle}
   .spinner{width:14px;height:14px;border:2.5px solid #cfe3bb;border-top-color:var(--leaf);
     border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:-2px}
   @keyframes spin{to{transform:rotate(360deg)}}
@@ -314,6 +351,40 @@
   </section>
 
   <!-- LIST -->
+  <!-- INVENTORY -->
+  <section id="tab-inventory" class="hide">
+    <div class="card">
+      <h2>My inventory</h2>
+      <p class="sub">Snap your barn, silo, truck/boat orders or the newspaper, then log what you have and need straight from the picture. Saved in this browser.</p>
+      <div class="shots" id="shotStrip"></div>
+      <input type="file" id="shotInput" accept="image/*" multiple hidden>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-bottom:10px">What I have</h2>
+      <div class="summary" id="invSummary"></div>
+      <div class="row">
+        <div class="ac search" style="flex:1 1 180px;min-width:140px">
+          <input id="invItem" type="search" autocomplete="off" placeholder="Add a good you have — e.g. Corn" style="width:100%">
+          <div class="ac-menu hide" id="invItemMenu"></div>
+        </div>
+        <label class="fld">Have<input type="number" id="invAmt" value="1" min="1"></label>
+        <button class="btn primary" id="invAddBtn">+ Add</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn sm" id="invToFill" title="Copy these totals into your List's barn/silo “Full now”">Use as List's “Full now”</button>
+        <span style="flex:1"></span>
+        <button class="btn sm" id="invCopy">📋 Copy</button>
+        <button class="btn sm ghost" id="invClear">Clear</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div id="invItems"></div>
+      <div class="empty" id="invEmpty">No items yet. Add screenshots above for reference, then log what's in your barn &amp; silo.</div>
+    </div>
+  </section>
+
   <section id="tab-list" class="hide">
     <div class="card">
       <h2>Needed-goods checklist</h2>
@@ -372,9 +443,35 @@
       <span class="ico"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.6-1.7"/></svg></span>Unlocks</button>
     <button data-tab="planner">
       <span class="ico"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h3M13 11h3M8 15h3M13 15h3"/></svg></span>Planner</button>
+    <button data-tab="inventory">
+      <span class="ico"><svg viewBox="0 0 24 24"><path d="M3 9l9-5 9 5v6l-9 5-9-5V9z"/><path d="M3 9l9 5 9-5"/><path d="M12 14v6"/></svg></span>Inventory<span class="badge" id="invCount"></span></button>
     <button data-tab="list">
       <span class="ico"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg></span>List<span class="badge" id="listCount"></span></button>
   </nav>
+</div>
+
+<div class="shotview" id="shotView">
+  <div class="sv-top">
+    <button id="svPrev" aria-label="Previous">‹</button>
+    <span class="sv-count" id="svCount"></span>
+    <div style="display:flex;gap:8px">
+      <button id="svNext" aria-label="Next">›</button>
+      <button id="svClose" aria-label="Close">×</button>
+    </div>
+  </div>
+  <div class="sv-img"><img id="svImg" alt="Screenshot"></div>
+  <div class="sv-log">
+    <div class="lbl">Log from this screenshot</div>
+    <div class="row">
+      <div class="ac search up" style="flex:1 1 150px;min-width:120px">
+        <input id="svItem" type="search" autocomplete="off" placeholder="Item name" style="width:100%">
+        <div class="ac-menu hide" id="svItemMenu"></div>
+      </div>
+      <label class="fld">Qty<input type="number" id="svQty" value="1" min="1"></label>
+      <button class="btn sm primary" id="svHave">+ Have</button>
+      <button class="btn sm" id="svNeed">+ Need</button>
+    </div>
+  </div>
 </div>
 
 <div class="sheet-bg" id="helpBg">
@@ -404,6 +501,7 @@ const PROXIES = [
 ];
 const DATA_KEY = "haydaytool.data.v1";
 const LIST_KEY = "haydaytool.list.v1";
+const INV_KEY = "haydaytool.inv.v1";
 const TTL = 60 * 60 * 1000; // 1h
 const CROP_MACHINES = ["crops", "trees & bushes"];
 const ANIMAL_MACHINES = ["animal products"];
@@ -412,6 +510,10 @@ const ZW = /[​-‏‪-‮⁠﻿]/g;
 let DATA = [];
 let ITEM_NAMES = [];
 let list = loadList();
+let inv = loadInv();
+let SHOTS = [];        // screenshots: [{id,url,ts}]
+let svIndex = 0;       // current screenshot in the viewer
+let shotsLoaded = false;
 let browseSort = { key: "profit_per_hour", dir: -1 };
 
 // Recipe data (shipped in data/recipes.js; sourced from the Hay Day Fandom Wiki).
@@ -712,7 +814,7 @@ function renderList(){
       html += `<div class="li ${it.checked?'done':''}">
         <input type="checkbox" data-chk="${id}" ${it.checked?'checked':''}>
         <input type="number" class="amt" min="1" value="${it.amount}" data-amt="${id}">
-        <span class="nm">${esc(it.product)}</span>
+        <span class="nm">${esc(it.product)}${(()=>{const h=invHave(it.product);return h?` <span class="have-chip">have ${h.toLocaleString()}</span>`:"";})()}</span>
         <span class="st">${store}</span>
         <button class="x" data-del="${id}" title="Remove">×</button>
       </div>`;
@@ -754,6 +856,155 @@ async function copyList(){
     document.body.removeChild(ta);
   }
 }
+
+/* ----------------------------- INVENTORY ---------------------------------- */
+function loadInv(){
+  try{ const o=JSON.parse(localStorage.getItem(INV_KEY)); if(o && Array.isArray(o.items)) return o; }catch(e){}
+  return { items:[] };
+}
+function saveInv(){ try{ localStorage.setItem(INV_KEY, JSON.stringify(inv)); }catch(e){} }
+function updateInvCount(){ const n=inv.items.length; $("#invCount").textContent = n?String(n):""; }
+function invHave(name){ const it=inv.items.find(x=>x.product.toLowerCase()===String(name).toLowerCase()); return it?it.qty:0; }
+function invUsed(){ const u={barn:0,silo:0}; for(const it of inv.items) u[storageOf(it.machine)]+=it.qty; return u; }
+function addToInv(name, qty){
+  const item=findInData(name);
+  const nm = item?item.product:clean(name);
+  if(!nm){ toast("Type an item"); return; }
+  const machine = item?item.machine:(machineOfName(nm)||"Animal Products");
+  const n=Math.max(1,Math.floor(qty||1));
+  const ex=inv.items.find(x=>x.product.toLowerCase()===nm.toLowerCase());
+  if(ex){ ex.qty+=n; ex.machine=machine; } else inv.items.push({ product:nm, machine, qty:n });
+  saveInv(); renderInv(); updateInvCount();
+  const cur=inv.items.find(x=>x.product.toLowerCase()===nm.toLowerCase());
+  toast(`Have ${cur?cur.qty:n}× ${nm}`);
+}
+function renderInvSummary(){
+  const u=invUsed();
+  const block=(name,key)=>{
+    const cap=Math.max(0,list.capacity[key]||0), used=u[key];
+    const pct=cap>0?Math.min(100,used/cap*100):0, over=cap>0&&used>cap;
+    const val = cap>0 ? `<b>${used.toLocaleString()}</b> / ${cap.toLocaleString()}` : `<b>${used.toLocaleString()}</b> units`;
+    return `<div class="store"><div class="lab"><span class="left">${name}</span>${val}</div>
+      ${cap>0?`<div class="bar ${over?'over':''}"><i style="width:${pct}%"></i></div>`:""}</div>`;
+  };
+  $("#invSummary").innerHTML = block("🏚️ Barn","barn") + block("🌾 Silo","silo");
+}
+function renderInv(){
+  renderInvSummary();
+  const empty=inv.items.length===0;
+  $("#invEmpty").classList.toggle("hide",!empty);
+  if(empty){ $("#invItems").innerHTML=""; return; }
+  let html="";
+  for(const store of ["barn","silo"]){
+    const grp=inv.items.filter(i=>storageOf(i.machine)===store);
+    if(!grp.length) continue;
+    html += `<div class="grp-title">${store==="barn"?"🏚️ Barn":"🌾 Silo"}</div>`;
+    for(const it of grp){
+      const id=esc(it.product);
+      html += `<div class="li">
+        <div class="stepper" data-inv="${id}">
+          <button data-step="-1" aria-label="Less">−</button>
+          <span class="q">${it.qty.toLocaleString()}</span>
+          <button data-step="1" aria-label="More">+</button>
+        </div>
+        <span class="nm">${esc(it.product)}</span>
+        <span class="st">${store}</span>
+        <button class="x" data-invdel="${id}" title="Remove">×</button>
+      </div>`;
+    }
+  }
+  $("#invItems").innerHTML = html;
+}
+function invExportText(){
+  const u=invUsed(), d=new Date().toISOString().slice(0,10);
+  const L=[`HayDay Tool — Inventory (${d})`,"",`Barn: ${u.barn} units · Silo: ${u.silo} units`];
+  for(const store of ["barn","silo"]){
+    const grp=inv.items.filter(i=>storageOf(i.machine)===store).sort((a,b)=>b.qty-a.qty);
+    if(!grp.length) continue;
+    L.push("", store.toUpperCase());
+    grp.forEach(it=>L.push(`  ${it.qty}× ${it.product}`));
+  }
+  if(!inv.items.length) L.push("", "(empty)");
+  return L.join("\n");
+}
+async function copyInv(){
+  const t=invExportText();
+  try{ await navigator.clipboard.writeText(t); toast("Inventory copied!"); }
+  catch(e){ const ta=document.createElement("textarea"); ta.value=t; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); toast("Inventory copied!"); }catch(_){ toast("Couldn't copy"); } document.body.removeChild(ta); }
+}
+
+/* --- screenshots: IndexedDB with graceful fallback --- */
+const DB_NAME="haydaytool_db", DB_STORE="shots";
+let _dbP=null;
+function idb(){
+  if(_dbP) return _dbP;
+  _dbP=new Promise(res=>{
+    if(!window.indexedDB) return res(null);
+    let rq; try{ rq=indexedDB.open(DB_NAME,1); }catch(e){ return res(null); }
+    rq.onupgradeneeded=()=>{ const db=rq.result; if(!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE,{keyPath:"id"}); };
+    rq.onsuccess=()=>res(rq.result); rq.onerror=()=>res(null);
+  });
+  return _dbP;
+}
+async function idbPut(rec){ const db=await idb(); if(!db) return false;
+  return new Promise(r=>{ try{ const tx=db.transaction(DB_STORE,"readwrite"); tx.objectStore(DB_STORE).put(rec); tx.oncomplete=()=>r(true); tx.onerror=()=>r(false);}catch(e){r(false);} }); }
+async function idbAll(){ const db=await idb(); if(!db) return [];
+  return new Promise(r=>{ try{ const tx=db.transaction(DB_STORE,"readonly"); const rq=tx.objectStore(DB_STORE).getAll(); rq.onsuccess=()=>r(rq.result||[]); rq.onerror=()=>r([]);}catch(e){r([]);} }); }
+async function idbDel(id){ const db=await idb(); if(!db) return;
+  return new Promise(r=>{ try{ const tx=db.transaction(DB_STORE,"readwrite"); tx.objectStore(DB_STORE).delete(id); tx.oncomplete=()=>r(); tx.onerror=()=>r();}catch(e){r();} }); }
+
+function downscaleImage(file,maxDim,q){
+  return new Promise((res,rej)=>{
+    const u=URL.createObjectURL(file), img=new Image();
+    img.onload=()=>{ try{
+      let w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+      const sc=Math.min(1, maxDim/Math.max(w,h)); w=Math.round(w*sc); h=Math.round(h*sc);
+      const c=document.createElement("canvas"); c.width=w; c.height=h;
+      c.getContext("2d").drawImage(img,0,0,w,h); URL.revokeObjectURL(u);
+      c.toBlob(b=> b?res(b):rej(new Error("toBlob")), "image/jpeg", q);
+    }catch(e){ URL.revokeObjectURL(u); rej(e); } };
+    img.onerror=()=>{ URL.revokeObjectURL(u); rej(new Error("load")); };
+    img.src=u;
+  });
+}
+async function loadShots(){
+  const recs=await idbAll(); recs.sort((a,b)=>a.ts-b.ts);
+  SHOTS = recs.map(r=>({ id:r.id, url: URL.createObjectURL(r.blob), ts:r.ts }));
+  renderShots();
+}
+async function addShots(files){
+  let added=0;
+  for(const f of files){
+    if(!f.type || !f.type.startsWith("image/")) continue;
+    let blob; try{ blob=await downscaleImage(f,1400,.82); }catch(e){ blob=f; }
+    const rec={ id:"s"+Date.now().toString(36)+Math.random().toString(36).slice(2,6), blob, ts:Date.now()+added };
+    await idbPut(rec);
+    SHOTS.push({ id:rec.id, url:URL.createObjectURL(rec.blob), ts:rec.ts }); added++;
+  }
+  renderShots();
+  if(added) toast(`Added ${added} screenshot${added>1?"s":""}`);
+}
+async function delShot(id){
+  await idbDel(id);
+  const s=SHOTS.find(x=>x.id===id); if(s){ try{ URL.revokeObjectURL(s.url); }catch(e){} }
+  SHOTS=SHOTS.filter(x=>x.id!==id); renderShots();
+}
+function renderShots(){
+  const strip=$("#shotStrip"); if(!strip) return;
+  strip.innerHTML = SHOTS.map((s,i)=>
+    `<div class="shot" data-shot="${i}"><img src="${s.url}" alt="Screenshot ${i+1}"><button class="del" data-shotdel="${esc(s.id)}" aria-label="Delete">×</button></div>`
+  ).join("") + `<button class="shot-add" id="shotAddBtn"><span>＋</span>Add</button>`;
+}
+function openShot(i){
+  if(!SHOTS.length) return;
+  svIndex=Math.max(0,Math.min(i,SHOTS.length-1));
+  $("#svImg").src=SHOTS[svIndex].url;
+  $("#svCount").textContent=`${svIndex+1} / ${SHOTS.length}`;
+  $("#shotView").classList.add("open");
+}
+function closeShot(){ $("#shotView").classList.remove("open"); }
+function stepShot(d){ if(SHOTS.length) openShot((svIndex+d+SHOTS.length)%SHOTS.length); }
 
 /* ----------------------------- PLANNER ------------------------------------ */
 function machineOfName(n){ return NAME_MACHINE[String(n||"").toLowerCase()] || null; }
@@ -873,9 +1124,10 @@ let CURRENT_TAB = "browse";
 function switchTab(name){
   CURRENT_TAB = name;
   $$("#tabs button").forEach(b=>b.classList.toggle("active", b.dataset.tab===name));
-  ["browse","profit","unlocks","planner","list"].forEach(t=>$("#tab-"+t).classList.toggle("hide", t!==name));
+  ["browse","profit","unlocks","planner","inventory","list"].forEach(t=>$("#tab-"+t).classList.toggle("hide", t!==name));
   if(name==="list") renderList();
   if(name==="planner") renderPlanner();
+  if(name==="inventory"){ renderInv(); renderShots(); if(!shotsLoaded){ shotsLoaded=true; loadShots(); } }
 }
 
 /* ------------------------------- per-page help ---------------------------- */
@@ -892,6 +1144,9 @@ const HELP = {
   planner: { title:"📋 Recipe Planner",
     what:"Breaks a batch down to raw ingredients. Tell it you want 10 Cakes and it lists every crop and raw good needed, plus the barn and silo space it'll take.",
     how:["Type what you want to make and how many, then tap + Add.","Add as many targets as you like — the totals combine.","Tap “Add raw materials to My List” to turn the whole breakdown into your checklist."] },
+  inventory: { title:"📦 Inventory",
+    what:"Track what you actually have, and attach screenshots of your barn, silo, orders or the newspaper to work from. It's saved on this device.",
+    how:["Tap ＋ Add to attach screenshots (barn, silo, truck/boat orders, the paper).","Tap a screenshot to open it full-size and log items right from it — “+ Have” adds to this inventory, “+ Need” adds to your List.","Or add items directly below with the amount you have, and use the +/− steppers to adjust.","Tap “Use as List's Full now” to feed these totals into your barn/silo space math on the List tab."] },
   list: { title:"✅ Needed Goods List",
     what:"Your personal checklist of what to collect, with live barn and silo space tracking. It's saved right on this device — no account needed.",
     how:["Add a good and the amount you need.","Set your Barn and Silo size, plus how full each is right now — it shows the space left and warns if the list won't fit.","Check goods off as you collect them.","Tap “📋 Copy list” to share it with a friend or your neighborhood."] }
@@ -963,6 +1218,8 @@ function attachAC(inputSel, menuSel, onEnter){
 }
 attachAC("#addItem", "#addItemMenu", ()=>$("#addBtn").click());
 attachAC("#planItem", "#planItemMenu", ()=>$("#planAdd").click());
+attachAC("#invItem", "#invItemMenu", ()=>$("#invAddBtn").click());
+attachAC("#svItem", "#svItemMenu", ()=>$("#svHave").click());
 
 // tabs
 $("#tabs").addEventListener("click", e=>{ const b=e.target.closest("button[data-tab]"); if(b) switchTab(b.dataset.tab); });
@@ -1014,6 +1271,46 @@ $("#clearBtn").addEventListener("click", ()=>{
   if(!list.items.length) return;
   if(confirm("Clear all goods from your list?")){ list.items=[]; saveList(); renderList(); updateListCount(); }
 });
+// Inventory
+$("#invAddBtn").addEventListener("click", ()=>{
+  addToInv($("#invItem").value, +$("#invAmt").value||1);
+  $("#invItem").value=""; $("#invAmt").value=1;
+});
+$("#invItems").addEventListener("click", e=>{
+  const step=e.target.closest("[data-step]");
+  if(step){
+    const box=step.closest("[data-inv]"); const it=inv.items.find(i=>i.product===box.dataset.inv);
+    if(it){ it.qty=Math.max(0, it.qty + (+step.dataset.step)); if(it.qty===0) inv.items=inv.items.filter(x=>x!==it);
+      saveInv(); renderInv(); updateInvCount(); }
+    return;
+  }
+  const del=e.target.closest("[data-invdel]");
+  if(del){ inv.items=inv.items.filter(i=>i.product!==del.dataset.invdel); saveInv(); renderInv(); updateInvCount(); }
+});
+$("#invCopy").addEventListener("click", copyInv);
+$("#invClear").addEventListener("click", ()=>{ if(confirm("Clear your whole inventory?")){ inv.items=[]; saveInv(); renderInv(); updateInvCount(); } });
+$("#invToFill").addEventListener("click", ()=>{
+  const u=invUsed(); list.filled.barn=u.barn; list.filled.silo=u.silo; saveList();
+  $("#fillBarn").value=u.barn; $("#fillSilo").value=u.silo;
+  toast("Set as your List's “Full now”");
+});
+
+// Screenshots
+$("#shotStrip").addEventListener("click", e=>{
+  const del=e.target.closest("[data-shotdel]"); if(del){ e.stopPropagation(); delShot(del.dataset.shotdel); return; }
+  if(e.target.closest("#shotAddBtn")){ $("#shotInput").click(); return; }
+  const th=e.target.closest("[data-shot]"); if(th){ openShot(+th.dataset.shot); }
+});
+$("#shotInput").addEventListener("change", e=>{ const f=[...e.target.files]; e.target.value=""; if(f.length) addShots(f); });
+$("#svClose").addEventListener("click", closeShot);
+$("#svPrev").addEventListener("click", ()=>stepShot(-1));
+$("#svNext").addEventListener("click", ()=>stepShot(1));
+$("#svHave").addEventListener("click", ()=>{ addToInv($("#svItem").value, +$("#svQty").value||1); $("#svItem").value=""; $("#svQty").value=1; });
+$("#svNeed").addEventListener("click", ()=>{
+  const n=clean($("#svItem").value); if(!n){ toast("Type an item"); return; }
+  addToList(n, +$("#svQty").value||1); $("#svItem").value=""; $("#svQty").value=1;
+});
+
 $("#refreshBtn").addEventListener("click", ()=>loadData({force:true}));
 
 // planner controls
@@ -1037,6 +1334,7 @@ $("#planClear").addEventListener("click", ()=>{ planTargets=[]; renderPlanner();
 
 // go
 updateListCount();
+updateInvCount();
 loadData();
 })();
 </script>
