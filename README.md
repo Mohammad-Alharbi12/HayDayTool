@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.svg" alt="HayDay Tool" width="620">
+  <img src="assets/logo.png" alt="HayDay Tool" width="520">
 </p>
 
 # HayDay Tool
