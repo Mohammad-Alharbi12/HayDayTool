@@ -238,12 +238,17 @@
   .sv-status.err{color:var(--danger)}
   .sv-status.busy{color:var(--leaf-d)}
   #svDetected .det{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid var(--line)}
-  #svDetected .det-q{font-weight:700;font-variant-numeric:tabular-nums;color:var(--leaf-d);flex:0 0 auto}
+  #svDetected input.det-q{width:54px;padding:5px 6px;border:1px solid var(--line);border-radius:8px;
+    font-weight:700;font-variant-numeric:tabular-nums;color:var(--leaf-d);text-align:center;flex:0 0 auto;background:#fff}
   #svDetected .det-n{flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .seg{display:flex;flex:0 0 auto;border:1px solid var(--line);border-radius:8px;overflow:hidden}
   .seg button{border:0;background:#fff;color:var(--muted);font-size:12px;font-weight:700;padding:5px 9px;cursor:pointer}
   .seg button.on{background:var(--leaf);color:#fff}
   .ai-note{font-size:12px;color:var(--muted);margin-top:12px;line-height:1.55}
+  .invtoggle{display:flex;align-items:center;gap:9px;margin-top:14px;font-size:13.5px;color:var(--ink);font-weight:600;cursor:pointer}
+  .invtoggle input{width:17px;height:17px;flex:0 0 auto}
+  .cover-note{background:#eef5e6;border:1px solid var(--line);border-radius:12px;padding:9px 12px;
+    font-size:13px;color:var(--leaf-d);font-weight:600;margin-bottom:12px}
 
   /* qty stepper */
   .stepper{display:flex;align-items:center;flex:0 0 auto}
@@ -342,7 +347,7 @@
   <section id="tab-planner" class="hide">
     <div class="card">
       <h2>Recipe planner</h2>
-      <p class="sub">Add what you want to make and see every raw ingredient to gather — crops, tree &amp; bush fruit, and animal products — with the barn &amp; silo space it takes.</p>
+      <p class="sub">Add what you want to make and see every raw ingredient still to gather — it subtracts what's already in your inventory — with the barn &amp; silo space it takes.</p>
       <div class="row">
         <div class="ac search" style="flex:1 1 180px;min-width:140px">
           <input id="planItem" type="search" autocomplete="off" placeholder="What to make — e.g. Cake" style="width:100%">
@@ -355,6 +360,7 @@
         <button class="btn sm ghost" id="planClear">Clear</button>
       </div>
       <div id="planTargets"></div>
+      <label class="invtoggle"><input type="checkbox" id="planUseInv" checked> Subtract what I already have in inventory</label>
     </div>
     <div class="card" id="planResultCard">
       <div id="planResult"><div class="empty">Add something to make above.</div></div>
@@ -1108,7 +1114,7 @@ function renderDetected(){
   el.innerHTML = `<div class="lbl" style="margin-top:10px">Detected — check, set Have/Need, then add</div>` +
     detected.map((x,i)=>`<div class="det" data-i="${i}">
       <input type="checkbox" data-detchk="${i}" ${x.include?"checked":""}>
-      <span class="det-q">${x.qty}×</span>
+      <input type="number" class="det-q" min="1" value="${x.qty}" data-detqty="${i}" aria-label="Quantity">
       <span class="det-n">${esc(x.name)}</span>
       <span class="seg">
         <button data-dettype="${i}" data-t="have" class="${x.type==="have"?"on":""}">Have</button>
@@ -1117,8 +1123,19 @@ function renderDetected(){
     </div>`).join("") +
     `<div class="row" style="margin-top:10px">
       <button class="btn sm primary" id="detAdd">Add selected</button>
+      <button class="btn sm" id="detPlan">📋 Plan needs vs inventory</button>
       <button class="btn sm ghost" id="detClear">Dismiss</button>
     </div>`;
+}
+function detPlanFromOrder(){
+  const needs = detected.filter(x=>x.include && x.type==="need");
+  if(!needs.length){ toast("Tick some “Need” items first"); return; }
+  planTargets = needs.map(x=>({ name:x.name, qty:x.qty }));
+  detected=[]; renderDetected(); setSvStatus("");
+  closeShot();
+  const t=$("#planUseInv"); if(t) t.checked=true;
+  switchTab("planner");
+  toast("Planning these against your inventory");
 }
 function detAddSelected(){
   let have=0, need=0, skip=0;
@@ -1163,11 +1180,19 @@ function resolveId(nameOrId){
   if(RECIPES[nameOrId]) return nameOrId;
   return NAME_TO_ID[String(nameOrId||"").toLowerCase()] || null;
 }
-function expand(id, qty, raw, subs, depth, seen){
+// Net-requirements expansion: when invMap is passed, on-hand inventory is
+// consumed at every level (finished product first, then its ingredients), so
+// the raw totals are only what you still need to gather.
+function expand(id, qty, raw, subs, invMap, depth, seen){
   const item = RECIPES[id];
   const name = item ? item.name : id;
+  const key = name.toLowerCase();
+  if(invMap){
+    const avail = invMap[key] || 0;
+    if(avail > 0){ const use = Math.min(avail, qty); invMap[key] = avail - use; qty -= use; }
+  }
+  if(qty <= 0) return;
   if(isRawItem(name, item) || depth > 14 || seen.has(id)){
-    const key = name.toLowerCase();
     if(!raw[key]) raw[key] = { name, qty:0, store: storeOfName(name, item) };
     raw[key].qty += qty;
     return;
@@ -1176,13 +1201,15 @@ function expand(id, qty, raw, subs, depth, seen){
   const seen2 = new Set(seen); seen2.add(id);
   for(const ing of item.ing){
     const cid = (ing.id && RECIPES[ing.id]) ? ing.id : (resolveId(ing.name) || ing.id || ing.name);
-    expand(cid, qty * ing.q, raw, subs, depth + 1, seen2);
+    expand(cid, qty * ing.q, raw, subs, invMap, depth + 1, seen2);
   }
 }
-function computePlan(){
+function invLowerMap(){ const m={}; for(const it of inv.items){ const k=it.product.toLowerCase(); m[k]=(m[k]||0)+it.qty; } return m; }
+function computePlan(useInv){
   const raw = {}, subs = {};
+  const invMap = useInv ? invLowerMap() : null;
   for(const t of planTargets){
-    expand(resolveId(t.name) || t.name, t.qty, raw, subs, 0, new Set());
+    expand(resolveId(t.name) || t.name, t.qty, raw, subs, invMap, 0, new Set());
   }
   return { raw, subs };
 }
@@ -1198,15 +1225,28 @@ function renderPlanner(){
   renderPlanTargets();
   const box = $("#planResult");
   if(!planTargets.length){ box.innerHTML = `<div class="empty">Add something to make above.</div>`; return; }
-  const { raw, subs } = computePlan();
+  const useInv = $("#planUseInv").checked;
+  const gross = computePlan(false);
+  const { raw, subs } = useInv ? computePlan(true) : gross;
   const arr = Object.values(raw);
   const silo = arr.filter(r=>r.store==="silo").sort((a,b)=>b.qty-a.qty);
   const barn = arr.filter(r=>r.store==="barn").sort((a,b)=>b.qty-a.qty);
   const siloU = silo.reduce((s,r)=>s+r.qty,0), barnU = barn.reduce((s,r)=>s+r.qty,0);
+  const grossTot = Object.values(gross.raw).reduce((s,r)=>s+r.qty,0);
+  const covered = grossTot - (siloU + barnU);
   const rows = a => a.map(r=>`<div class="li">${qcol}<b>${r.qty.toLocaleString()}</b></span><span class="nm">${esc(r.name)}</span></div>`).join("");
   const subArr = Object.keys(subs).map(id=>({ name: RECIPES[id]?RECIPES[id].name:id, qty: subs[id] })).sort((a,b)=>b.qty-a.qty);
+  const note = useInv && covered>0
+    ? `<div class="cover-note">✅ Your inventory covers ${covered.toLocaleString()} unit${covered===1?"":"s"} — below is only what you still need.</div>` : "";
+  if(useInv && !arr.length){
+    box.innerHTML = note + `<div class="empty" style="color:var(--ok);font-weight:600">🎉 You already have everything you need to make this!</div>
+      <div class="row" style="margin-top:14px"><button class="btn sm ghost" id="planCopy">📋 Copy plan</button></div>`;
+    $("#planCopy").addEventListener("click", copyPlan);
+    return;
+  }
   box.innerHTML = `
-    <h2 style="margin-bottom:10px">Raw materials to gather</h2>
+    <h2 style="margin-bottom:10px">${useInv?"Still need to gather":"Raw materials to gather"}</h2>
+    ${note}
     <div class="summary">
       <div class="store"><div class="lab"><span class="left">🌾 Silo (crops)</span><b>${siloU.toLocaleString()} units</b></div></div>
       <div class="store"><div class="lab"><span class="left">🏚️ Barn (goods)</span><b>${barnU.toLocaleString()} units</b></div></div>
@@ -1215,7 +1255,7 @@ function renderPlanner(){
     ${barn.length?`<div class="grp-title">🏚️ Barn — fruit &amp; animal goods</div>${rows(barn)}`:""}
     <div class="row" style="margin-top:14px">
       <button class="btn sm" id="planCopy">📋 Copy plan</button>
-      <button class="btn sm" id="planToList">Add raw materials to My List</button>
+      <button class="btn sm" id="planToList">Add ${useInv?"what's needed":"raw materials"} to My List</button>
     </div>
     <details style="margin-top:14px"><summary style="cursor:pointer;color:var(--muted);font-size:13px;font-weight:600">Products to craft along the way (${subArr.length})</summary>
       <div style="margin-top:8px">${subArr.map(s=>`<div class="li">${qcol}<b>${s.qty.toLocaleString()}</b></span><span class="nm">${esc(s.name)}</span></div>`).join("")}</div>
@@ -1224,12 +1264,14 @@ function renderPlanner(){
   $("#planToList").addEventListener("click", planToList);
 }
 function planText(){
-  const { raw } = computePlan();
+  const useInv = $("#planUseInv").checked;
+  const { raw } = computePlan(useInv);
   const arr = Object.values(raw);
   const silo = arr.filter(r=>r.store==="silo").sort((a,b)=>b.qty-a.qty);
   const barn = arr.filter(r=>r.store==="barn").sort((a,b)=>b.qty-a.qty);
   const siloU = silo.reduce((s,r)=>s+r.qty,0), barnU = barn.reduce((s,r)=>s+r.qty,0);
-  const L = ["HayDay Tool — Plan", "", "Making: " + planTargets.map(t=>t.qty+"× "+t.name).join(", "), "",
+  const L = ["HayDay Tool — Plan", "", "Making: " + planTargets.map(t=>t.qty+"× "+t.name).join(", "),
+             useInv?"(minus what's already in your inventory)":"", "",
              `Silo: ${siloU} crop units · Barn: ${barnU} goods units`];
   if(silo.length){ L.push("", "SILO (crops)"); silo.forEach(r=>L.push(`  ${r.qty}× ${r.name}`)); }
   if(barn.length){ L.push("", "BARN (fruit & animal goods)"); barn.forEach(r=>L.push(`  ${r.qty}× ${r.name}`)); }
@@ -1242,7 +1284,7 @@ async function copyPlan(){
     try{ document.execCommand("copy"); toast("Plan copied!"); }catch(_){ toast("Couldn't copy"); } document.body.removeChild(ta); }
 }
 function planToList(){
-  const { raw } = computePlan();
+  const { raw } = computePlan($("#planUseInv").checked);
   let n = 0;
   for(const r of Object.values(raw)){
     const item = findInData(r.name);
@@ -1282,8 +1324,8 @@ const HELP = {
     what:"What becomes available at each farm level — machines, buildings and the goods they make.",
     how:["Type a level in the box.","Tap “At this level” to see just what opens at that level, or “Up to this level” for everything available by then.","Handy for planning what to aim for as you level up."] },
   planner: { title:"📋 Recipe Planner",
-    what:"Breaks a batch down to raw ingredients. Tell it you want 10 Cakes and it lists every crop and raw good needed, plus the barn and silo space it'll take.",
-    how:["Type what you want to make and how many, then tap + Add.","Add as many targets as you like — the totals combine.","Tap “Add raw materials to My List” to turn the whole breakdown into your checklist."] },
+    what:"Breaks a batch down to the raw ingredients you need — and subtracts what's already in your inventory, so you see only what's still missing. Tell it you want 10 Cakes and it lists every crop and raw good to gather.",
+    how:["Type what you want to make and how many, then tap + Add.","Keep “Subtract what I already have” on to net it against your inventory; toggle it off for the full recipe.","Add as many targets as you like — the totals combine.","Tap “Add … to My List” to turn the breakdown into your checklist. You can also send an order screenshot straight here from the Inventory tab."] },
   inventory: { title:"📦 Inventory",
     what:"Track what you actually have, and attach screenshots of your barn, silo, orders or the newspaper to work from. It's saved on this device.",
     how:["Tap ＋ Add to attach screenshots (barn, silo, truck/boat orders, the paper).","Tap a screenshot to open it full-size and log items right from it — “+ Have” adds to this inventory, “+ Need” adds to your List.","Or add items directly below with the amount you have, and use the +/− steppers to adjust.","Tap “Use as List's Full now” to feed these totals into your barn/silo space math on the List tab."] },
@@ -1470,11 +1512,14 @@ $("#svDetected").addEventListener("click", e=>{
   const seg=e.target.closest("[data-dettype]");
   if(seg){ const i=+seg.dataset.dettype; if(detected[i]){ detected[i].type=seg.dataset.t; renderDetected(); } return; }
   if(e.target.closest("#detAdd")){ detAddSelected(); return; }
+  if(e.target.closest("#detPlan")){ detPlanFromOrder(); return; }
   if(e.target.closest("#detClear")){ detected=[]; renderDetected(); setSvStatus(""); return; }
 });
 $("#svDetected").addEventListener("change", e=>{
   const chk=e.target.closest("[data-detchk]");
-  if(chk){ const i=+chk.dataset.detchk; if(detected[i]) detected[i].include=chk.checked; }
+  if(chk){ const i=+chk.dataset.detchk; if(detected[i]) detected[i].include=chk.checked; return; }
+  const q=e.target.closest("[data-detqty]");
+  if(q){ const i=+q.dataset.detqty; if(detected[i]) detected[i].qty=Math.max(1,Math.floor(+q.value||1)); }
 });
 
 $("#refreshBtn").addEventListener("click", ()=>loadData({force:true}));
@@ -1497,6 +1542,7 @@ $("#planFromList").addEventListener("click", ()=>{
   renderPlanner();
 });
 $("#planClear").addEventListener("click", ()=>{ planTargets=[]; renderPlanner(); });
+$("#planUseInv").addEventListener("change", renderPlanner);
 
 // go
 updateListCount();

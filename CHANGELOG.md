@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2026-11-15
+
+### Added
+- **Inventory-aware planning.** The planner now subtracts what's already in your
+  inventory at every recipe level, so it shows only what you still need to gather
+  (toggle off for the full recipe). Shows how many units your inventory covers,
+  and celebrates when you already have everything.
+- **Order screenshots → plan.** From an AI-read screenshot you can send the "need"
+  items straight to the planner, which cross-references your inventory and tells
+  you exactly what to produce/gather to fill the order.
+- **Editable detected quantities.** Each AI-detected item now has an editable
+  quantity field in the review list.
+
+### Fixed
+- AI reading parser is far more forgiving (handles code fences, bare arrays, and
+  alternate field names), fixing "nothing found" on valid screenshots.
+
 ## [2.6.0] - 2026-11-15
 
 ### Changed
