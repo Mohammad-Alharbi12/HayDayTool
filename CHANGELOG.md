@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-11-14
+
+### Added
+- **Barn & silo "full now" tracking.** The checklist now takes both the storage
+  *size* and how *full it is right now*, so each bar shows the current fill plus
+  what the list still needs stacked against capacity, and tells you the free
+  space now and what's left after you collect the list (or warns when it won't
+  fit). Values persist and update live as you type. Copy/export reflects it too.
+- **Live search dropdown.** The "Add a good" and planner inputs now show a
+  tap-to-select suggestion list that filters item names as you type (with the
+  machine shown), replacing the inconsistent native datalist. Arrow keys + Enter
+  work on desktop; tap to pick on mobile.
+
 ## [2.1.0] - 2026-11-14
 
 ### Changed

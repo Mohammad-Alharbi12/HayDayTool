@@ -83,6 +83,17 @@
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7a62' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
     background-repeat:no-repeat;background-position:right 11px center}
 
+  /* Autocomplete dropdown */
+  .ac{position:relative}
+  .ac-menu{position:absolute;left:0;right:0;top:calc(100% + 5px);z-index:40;background:#fff;
+    border:1px solid var(--line);border-radius:13px;box-shadow:0 12px 34px rgba(20,40,10,.20);
+    max-height:258px;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px}
+  .ac-item{display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:10px 11px;font-size:15px;border-radius:9px;cursor:pointer;line-height:1.2}
+  .ac-item .ac-mac{font-size:11px;color:var(--muted);font-weight:600;flex:0 0 auto}
+  .ac-item.active,.ac-item:active{background:#eef5e6}
+  .ac-item b{color:var(--leaf-d)}
+
   /* Buttons */
   .btn{border:1px solid var(--line);background:#fff;color:var(--ink);padding:11px 14px;border-radius:12px;
     font-size:14px;font-weight:650;min-height:44px;transition:transform .1s}
@@ -116,11 +127,24 @@
   .store .lab{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;margin-bottom:8px;gap:6px}
   .store .lab b{font-size:14px}
   .store .lab .left{color:var(--muted)}
-  .bar{height:11px;background:#e7efdd;border-radius:999px;overflow:hidden}
-  .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--grass),#9bd255);border-radius:999px;transition:width .2s}
+  .bar{height:11px;background:#e7efdd;border-radius:999px;overflow:hidden;display:flex}
+  .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--leaf),#7bc244);transition:width .2s}
+  .bar > em.need{display:block;height:100%;transition:width .2s;
+    background:repeating-linear-gradient(45deg,#d6e6bf,#d6e6bf 5px,#ecd98f 5px,#ecd98f 10px)}
+  .bar.over{background:#f6d9cf}
   .bar.over > i{background:linear-gradient(90deg,#e0803a,var(--danger))}
+  .bar.over > em.need{background:repeating-linear-gradient(45deg,#e7b199,#e7b199 5px,#d98a6a 5px,#d98a6a 10px)}
   .totals{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:6px}
   .totals b{color:var(--ink)}
+  .store .lab .mini{font-size:11px;color:var(--muted);font-weight:600}
+
+  /* Barn/Silo size + fill inputs */
+  .caps{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .cap-grp{background:#f5faef;border:1px solid var(--line);border-radius:14px;padding:10px 11px}
+  .cap-h{font-size:13px;font-weight:800;color:var(--leaf-d);margin-bottom:8px}
+  .cap-grp .fld{margin-bottom:7px}
+  .cap-grp .fld:last-child{margin-bottom:0}
+  .cap-grp input[type=number]{width:100%}
 
   /* checklist / planner rows */
   .grp-title{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
@@ -273,7 +297,10 @@
       <h2>Recipe planner</h2>
       <p class="sub">Add what you want to make and see every raw ingredient to gather — crops, tree &amp; bush fruit, and animal products — with the barn &amp; silo space it takes.</p>
       <div class="row">
-        <input class="search" id="planItem" list="allItems" placeholder="What to make — e.g. Cake">
+        <div class="ac search" style="flex:1 1 180px;min-width:140px">
+          <input id="planItem" type="search" autocomplete="off" placeholder="What to make — e.g. Cake" style="width:100%">
+          <div class="ac-menu hide" id="planItemMenu"></div>
+        </div>
         <label class="fld">Qty<input type="number" id="planQty" value="1" min="1"></label>
         <button class="btn primary" id="planAdd">+ Add</button>
         <span style="flex:1"></span>
@@ -296,14 +323,27 @@
       <div class="summary" id="summary"></div>
 
       <div class="row" style="margin-bottom:10px">
-        <input class="search" id="addItem" list="allItems" placeholder="Add a good — e.g. Bread">
-        <datalist id="allItems"></datalist>
+        <div class="ac search" style="flex:1 1 180px;min-width:140px">
+          <input id="addItem" type="search" autocomplete="off" placeholder="Add a good — e.g. Bread" style="width:100%">
+          <div class="ac-menu hide" id="addItemMenu"></div>
+          <datalist id="allItems"></datalist>
+        </div>
         <label class="fld">Amount<input type="number" id="addAmt" value="1" min="1"></label>
         <button class="btn primary" id="addBtn">+ Add</button>
       </div>
-      <div class="row">
-        <label class="fld">Barn size<input type="number" id="capBarn" min="0"></label>
-        <label class="fld">Silo size<input type="number" id="capSilo" min="0"></label>
+      <div class="caps">
+        <div class="cap-grp">
+          <div class="cap-h">🏚️ Barn</div>
+          <label class="fld">Size<input type="number" id="capBarn" min="0" placeholder="e.g. 1000"></label>
+          <label class="fld">Full now<input type="number" id="fillBarn" min="0" placeholder="0"></label>
+        </div>
+        <div class="cap-grp">
+          <div class="cap-h">🌾 Silo</div>
+          <label class="fld">Size<input type="number" id="capSilo" min="0" placeholder="e.g. 1000"></label>
+          <label class="fld">Full now<input type="number" id="fillSilo" min="0" placeholder="0"></label>
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
         <button class="btn sm" id="saveCap">Save sizes</button>
         <span style="flex:1"></span>
         <button class="btn sm" id="copyBtn">📋 Copy list</button>
@@ -362,6 +402,7 @@ const ANIMAL_MACHINES = ["animal products"];
 const ZW = /[​-‏‪-‮⁠﻿]/g;
 
 let DATA = [];
+let ITEM_NAMES = [];
 let list = loadList();
 let browseSort = { key: "profit_per_hour", dir: -1 };
 
@@ -473,6 +514,7 @@ function setStatus(html, warn){
 function onData(){
   NAME_MACHINE = {};
   for(const i of DATA) NAME_MACHINE[i.product.toLowerCase()] = i.machine;
+  ITEM_NAMES = DATA.map(i=>i.product).sort((a,b)=>a.localeCompare(b));
   fillMachineSelects();
   fillDatalist();
   renderBrowse();
@@ -581,9 +623,12 @@ function renderUnlocks(mode){
 function loadList(){
   try{
     const o = JSON.parse(localStorage.getItem(LIST_KEY));
-    if(o && o.capacity && Array.isArray(o.items)) return o;
+    if(o && o.capacity && Array.isArray(o.items)){
+      if(!o.filled) o.filled = { barn:0, silo:0 };   // migrate older saves
+      return o;
+    }
   }catch(e){}
-  return { capacity:{ barn:1000, silo:1000 }, items:[] };
+  return { capacity:{ barn:1000, silo:1000 }, filled:{ barn:0, silo:0 }, items:[] };
 }
 function saveList(){ try{ localStorage.setItem(LIST_KEY, JSON.stringify(list)); }catch(e){} }
 
@@ -602,23 +647,34 @@ function addToList(name, amount){
   toast(`Added ${n}× ${item.product}`);
 }
 function summarize(){
-  const used={barn:0,silo:0}; let total=0, got=0;
+  // "need" per store = items on the list not yet checked off (what you still have to collect)
+  const need={barn:0,silo:0}, listed={barn:0,silo:0}; let total=0, got=0;
   for(const it of list.items){
-    const s=storageOf(it.machine); used[s]+=it.amount; total+=it.amount; if(it.checked) got+=it.amount;
+    const s=storageOf(it.machine); listed[s]+=it.amount; total+=it.amount;
+    if(it.checked) got+=it.amount; else need[s]+=it.amount;
   }
-  return { used, remaining:{barn:list.capacity.barn-used.barn, silo:list.capacity.silo-used.silo},
-    total, got, need:total-got, items:list.items.length };
+  return { need, listed, total, got, needTotal:total-got, items:list.items.length };
 }
 function renderSummary(){
   const s=summarize();
   const block=(name,key)=>{
-    const cap=list.capacity[key], u=s.used[key], rem=cap-u;
-    const pct=cap>0?Math.min(100, u/cap*100):0;
-    const over=rem<0;
+    const cap=Math.max(0, list.capacity[key]||0);
+    const fill=Math.max(0, list.filled[key]||0);       // already in storage right now
+    const need=s.need[key];                            // still to collect from the list
+    const freeNow=cap-fill;                            // empty space available this moment
+    const after=cap-fill-need;                         // space left once the list is collected
+    const fillPct=cap>0?Math.min(100, fill/cap*100):0;
+    const needPct=cap>0?Math.min(100-fillPct, need/cap*100):0;
+    const over=after<0;
+    const line = over
+      ? `<b style="color:var(--danger)">Won't fit — short ${(-after).toLocaleString()}</b>`
+      : `<b>${freeNow.toLocaleString()}</b> free now · <b>${after.toLocaleString()}</b> left after list`;
     return `<div class="store">
-      <div class="lab"><span class="left">${name}</span><b>${u.toLocaleString()} / ${cap.toLocaleString()}</b></div>
-      <div class="bar ${over?'over':''}"><i style="width:${pct}%"></i></div>
-      <div class="totals"><span>${over?`<b style="color:var(--danger)">Over by ${(-rem).toLocaleString()}</b>`:`<b>${rem.toLocaleString()}</b> space left`}</span></div>
+      <div class="lab"><span class="left">${name}</span><b>${fill.toLocaleString()} / ${cap.toLocaleString()}</b></div>
+      <div class="bar ${over?'over':''}">
+        <i style="width:${fillPct}%"></i><em style="width:${needPct}%" class="need"></em>
+      </div>
+      <div class="totals"><span class="mini">${line}</span></div>
     </div>`;
   };
   $("#summary").innerHTML = block("🏚️ Barn","barn") + block("🌾 Silo","silo") +
@@ -626,13 +682,15 @@ function renderSummary(){
        <span><b>${s.items}</b> goods</span>
        <span><b>${s.total.toLocaleString()}</b> units total</span>
        <span><b style="color:var(--ok)">${s.got.toLocaleString()}</b> collected</span>
-       <span><b>${s.need.toLocaleString()}</b> still needed</span>
+       <span><b>${s.needTotal.toLocaleString()}</b> still to get</span>
      </div>`;
 }
 function renderList(){
   renderSummary();
   $("#capBarn").value = list.capacity.barn;
   $("#capSilo").value = list.capacity.silo;
+  $("#fillBarn").value = list.filled.barn;
+  $("#fillSilo").value = list.filled.silo;
   const empty = list.items.length===0;
   $("#listEmpty").classList.toggle("hide", !empty);
   if(empty){ $("#listItems").innerHTML=""; return; }
@@ -662,9 +720,13 @@ function exportText(){
   const s=summarize();
   const d=new Date().toISOString().slice(0,10);
   const L=[`HayDay Tool — Needed Goods (${d})`,""];
-  const over=k=>s.remaining[k]<0?` — OVER by ${-s.remaining[k]}`:"";
-  L.push(`Barn: ${s.used.barn}/${list.capacity.barn} used · ${s.remaining.barn} left${over("barn")}`);
-  L.push(`Silo: ${s.used.silo}/${list.capacity.silo} used · ${s.remaining.silo} left${over("silo")}`);
+  const line=k=>{
+    const cap=list.capacity[k]||0, fill=list.filled[k]||0, need=s.need[k], after=cap-fill-need;
+    const tail = after<0 ? ` — WON'T FIT, short ${-after}` : ` · ${after} left after`;
+    return `${fill}/${cap} full now · list needs ${need}${tail}`;
+  };
+  L.push(`Barn: ${line("barn")}`);
+  L.push(`Silo: ${line("silo")}`);
   L.push(`Collected ${s.got}/${s.total} units · ${s.items} items`);
   if(!list.items.length){ L.push("","(list is empty)"); return L.join("\n"); }
   for(const store of ["barn","silo"]){
@@ -806,6 +868,62 @@ function switchTab(name){
   if(name==="planner") renderPlanner();
 }
 
+/* ----------------------------- autocomplete ------------------------------- */
+// A live suggestion dropdown: filters item names as you type, tap/arrow to pick.
+function attachAC(inputSel, menuSel, onEnter){
+  const input = $(inputSel), menu = $(menuSel);
+  let items = [], active = -1, suppress = false;
+  const close = () => { menu.classList.add("hide"); menu.innerHTML=""; items=[]; active=-1; };
+  const machineOf = n => NAME_MACHINE[n.toLowerCase()] || "";
+  function hl(name, q){
+    const i = name.toLowerCase().indexOf(q.toLowerCase());
+    if(i<0 || !q) return esc(name);
+    return esc(name.slice(0,i)) + "<b>" + esc(name.slice(i,i+q.length)) + "</b>" + esc(name.slice(i+q.length));
+  }
+  function build(q){
+    const ql = q.toLowerCase(), starts=[], incl=[];
+    for(const n of ITEM_NAMES){
+      const idx = n.toLowerCase().indexOf(ql);
+      if(idx===0) starts.push(n); else if(idx>0) incl.push(n);
+    }
+    items = starts.concat(incl).slice(0, 8);
+  }
+  function paint(){
+    menu.innerHTML = items.map((n,i)=>
+      `<div class="ac-item${i===active?' active':''}" data-i="${i}">
+         <span>${hl(n, input.value.trim())}</span>
+         <span class="ac-mac">${esc(machineOf(n))}</span>
+       </div>`).join("");
+  }
+  function show(){
+    const q = input.value.trim();
+    if(q.length < 1 || !ITEM_NAMES.length){ close(); return; }
+    build(q);
+    if(!items.length){ close(); return; }
+    active = -1; paint(); menu.classList.remove("hide");
+  }
+  function choose(i){
+    if(i<0 || i>=items.length) return;
+    input.value = items[i]; close(); suppress = true; input.focus();
+  }
+  input.addEventListener("input", show);
+  input.addEventListener("focus", ()=>{ if(suppress){ suppress = false; return; } show(); });
+  input.addEventListener("keydown", e=>{
+    const open = !menu.classList.contains("hide");
+    if(e.key==="ArrowDown" && open){ e.preventDefault(); active=Math.min(active+1, items.length-1); paint(); }
+    else if(e.key==="ArrowUp" && open){ e.preventDefault(); active=Math.max(active-1, 0); paint(); }
+    else if(e.key==="Enter"){ if(open && active>=0){ e.preventDefault(); choose(active); } else { close(); if(onEnter) onEnter(); } }
+    else if(e.key==="Escape"){ close(); }
+  });
+  input.addEventListener("blur", ()=> setTimeout(close, 130));
+  menu.addEventListener("mousedown", e=>{   // fires before blur → selection isn't lost (works on touch too)
+    const it = e.target.closest(".ac-item");
+    if(it){ e.preventDefault(); choose(+it.dataset.i); }
+  });
+}
+attachAC("#addItem", "#addItemMenu", ()=>$("#addBtn").click());
+attachAC("#planItem", "#planItemMenu", ()=>$("#planAdd").click());
+
 // tabs
 $("#tabs").addEventListener("click", e=>{ const b=e.target.closest("button[data-tab]"); if(b) switchTab(b.dataset.tab); });
 // browse controls
@@ -827,7 +945,6 @@ $("#addBtn").addEventListener("click", ()=>{
   const name=$("#addItem").value.trim(); if(!name) return;
   addToList(name, +$("#addAmt").value||1); $("#addItem").value=""; $("#addAmt").value=1;
 });
-$("#addItem").addEventListener("keydown", e=>{ if(e.key==="Enter") $("#addBtn").click(); });
 $("#listItems").addEventListener("change", e=>{
   const chk=e.target.closest("[data-chk]"), amt=e.target.closest("[data-amt]");
   if(chk){ const it=list.items.find(i=>i.product===chk.dataset.chk); if(it){ it.checked=chk.checked; saveList(); renderList(); } }
@@ -840,8 +957,18 @@ $("#listItems").addEventListener("click", e=>{
 $("#saveCap").addEventListener("click", ()=>{
   list.capacity.barn=Math.max(0,Math.floor(+$("#capBarn").value||0));
   list.capacity.silo=Math.max(0,Math.floor(+$("#capSilo").value||0));
-  saveList(); renderList(); toast("Sizes saved");
+  list.filled.barn=Math.max(0,Math.floor(+$("#fillBarn").value||0));
+  list.filled.silo=Math.max(0,Math.floor(+$("#fillSilo").value||0));
+  saveList(); renderSummary(); toast("Saved");
 });
+// live-update the bars as you type sizes/fill, without needing Save
+["#capBarn","#capSilo","#fillBarn","#fillSilo"].forEach(s=>$(s).addEventListener("input", ()=>{
+  list.capacity.barn=Math.max(0,Math.floor(+$("#capBarn").value||0));
+  list.capacity.silo=Math.max(0,Math.floor(+$("#capSilo").value||0));
+  list.filled.barn=Math.max(0,Math.floor(+$("#fillBarn").value||0));
+  list.filled.silo=Math.max(0,Math.floor(+$("#fillSilo").value||0));
+  saveList(); renderSummary();
+}));
 $("#copyBtn").addEventListener("click", copyList);
 $("#clearBtn").addEventListener("click", ()=>{
   if(!list.items.length) return;
@@ -858,7 +985,6 @@ $("#planAdd").addEventListener("click", ()=>{
   if(ex) ex.qty+=qty; else planTargets.push({name:disp, qty});
   $("#planItem").value=""; $("#planQty").value=1; renderPlanner();
 });
-$("#planItem").addEventListener("keydown", e=>{ if(e.key==="Enter") $("#planAdd").click(); });
 $("#planTargets").addEventListener("click", e=>{
   const b=e.target.closest("[data-pt]"); if(b){ planTargets.splice(+b.dataset.pt,1); renderPlanner(); }
 });
