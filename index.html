@@ -185,6 +185,28 @@
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .hide{display:none!important}
   .foot{color:var(--muted);font-size:11px;text-align:center;margin:18px 4px 2px;line-height:1.6}
+  .foot a{color:var(--leaf-d);font-weight:600;text-decoration:none}
+  .foot a:active{text-decoration:underline}
+  .foot .flinks{margin-top:8px}
+  .foot .flinks a{margin:0 5px;white-space:nowrap}
+  .foot .cpy{margin-top:6px;opacity:.85}
+
+  /* Help sheet (per-page how-to) */
+  .sheet-bg{position:fixed;inset:0;z-index:60;background:rgba(20,30,12,.45);
+    display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .18s}
+  .sheet-bg.open{opacity:1;pointer-events:auto}
+  .sheet{width:100%;max-width:520px;background:#fff;border-radius:20px 20px 0 0;
+    padding:16px 20px calc(20px + env(safe-area-inset-bottom));max-height:82dvh;overflow-y:auto;
+    transform:translateY(20px);transition:transform .2s;box-shadow:0 -8px 30px rgba(20,40,10,.25)}
+  .sheet-bg.open .sheet{transform:translateY(0)}
+  .sheet-h{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+  .sheet-h h2{font-size:18px;margin:0;color:var(--leaf-d)}
+  .sheet-x{border:0;background:#eef5e6;color:var(--leaf-d);width:32px;height:32px;border-radius:50%;
+    font-size:20px;line-height:1;cursor:pointer;flex:0 0 auto}
+  .sheet p{font-size:14.5px;line-height:1.5;margin:4px 0 2px;color:var(--ink)}
+  .sheet .how{font-weight:800;color:var(--leaf-d);font-size:12px;text-transform:uppercase;letter-spacing:.4px;margin:14px 0 7px}
+  .sheet ul{margin:0;padding-left:20px}
+  .sheet li{font-size:14px;line-height:1.5;margin-bottom:6px;color:var(--ink)}
   .spinner{width:14px;height:14px;border:2.5px solid #cfe3bb;border-top-color:var(--leaf);
     border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:-2px}
   @keyframes spin{to{transform:rotate(360deg)}}
@@ -196,6 +218,9 @@
   <header class="appbar">
       <img class="logo-img" src="assets/wordmark.png?v=3" alt="HayDay Tool" width="59" height="42">
       <div class="ttl"><div class="sub">Live farm data &amp; planner</div></div>
+      <button class="iconbtn" id="helpBtn" title="How this page works" aria-label="Help">
+        <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+      </button>
       <button class="iconbtn" id="refreshBtn" title="Fetch the latest data" aria-label="Refresh">↻</button>
   </header>
   <div class="statusbar" id="dataStatus"><span class="spinner"></span> Loading data…</div>
@@ -333,6 +358,8 @@
 
   <div class="foot">
     Data from <a href="https://hayday.info" target="_blank" rel="noopener">hayday.info</a> · not affiliated with Supercell.<br>HayDay is a trademark of Supercell Oy.
+    <div class="flinks"><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Use</a> · <a href="https://github.com/biblestudytn26/HayDayTool" target="_blank" rel="noopener">GitHub</a></div>
+    <div class="cpy">© 2026 HayDay Tool</div>
   </div>
   </main>
 
@@ -348,6 +375,13 @@
     <button data-tab="list">
       <span class="ico"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg></span>List<span class="badge" id="listCount"></span></button>
   </nav>
+</div>
+
+<div class="sheet-bg" id="helpBg">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="sheet-h"><h2 id="helpTitle"></h2><button class="sheet-x" id="helpClose" aria-label="Close">×</button></div>
+    <div id="helpBody"></div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -835,12 +869,44 @@ function toast(msg){
   const t=$("#toast"); t.textContent=msg; t.classList.add("show");
   clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("show"),1700);
 }
+let CURRENT_TAB = "browse";
 function switchTab(name){
+  CURRENT_TAB = name;
   $$("#tabs button").forEach(b=>b.classList.toggle("active", b.dataset.tab===name));
   ["browse","profit","unlocks","planner","list"].forEach(t=>$("#tab-"+t).classList.toggle("hide", t!==name));
   if(name==="list") renderList();
   if(name==="planner") renderPlanner();
 }
+
+/* ------------------------------- per-page help ---------------------------- */
+const HELP = {
+  browse: { title:"🔍 Browse",
+    what:"Every HayDay good in one place, each showing the coins-per-hour it earns while producing.",
+    how:["Type in the search box to find a good by name.","Use the sort and filter controls to rank by profit, XP, price or level.","Tap the + on any row to drop it into your Needed Goods list."] },
+  profit: { title:"📈 Best Profit",
+    what:"Goods ranked by how many coins per hour they make, so you can keep your machines on the most worthwhile orders.",
+    how:["Scroll the ranking from most to least profitable.","Keep in mind longer-cooking goods tie up a machine for longer.","Tap + to add a good to your list."] },
+  unlocks: { title:"🔓 Level Unlocks",
+    what:"What becomes available at each farm level — machines, buildings and the goods they make.",
+    how:["Type a level in the box.","Tap “At this level” to see just what opens at that level, or “Up to this level” for everything available by then.","Handy for planning what to aim for as you level up."] },
+  planner: { title:"📋 Recipe Planner",
+    what:"Breaks a batch down to raw ingredients. Tell it you want 10 Cakes and it lists every crop and raw good needed, plus the barn and silo space it'll take.",
+    how:["Type what you want to make and how many, then tap + Add.","Add as many targets as you like — the totals combine.","Tap “Add raw materials to My List” to turn the whole breakdown into your checklist."] },
+  list: { title:"✅ Needed Goods List",
+    what:"Your personal checklist of what to collect, with live barn and silo space tracking. It's saved right on this device — no account needed.",
+    how:["Add a good and the amount you need.","Set your Barn and Silo size, plus how full each is right now — it shows the space left and warns if the list won't fit.","Check goods off as you collect them.","Tap “📋 Copy list” to share it with a friend or your neighborhood."] }
+};
+function openHelp(){
+  const h = HELP[CURRENT_TAB] || HELP.browse;
+  $("#helpTitle").textContent = h.title;
+  $("#helpBody").innerHTML = `<p>${esc(h.what)}</p><div class="how">How to use it</div><ul>${h.how.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
+  $("#helpBg").classList.add("open");
+}
+function closeHelp(){ $("#helpBg").classList.remove("open"); }
+$("#helpBtn").addEventListener("click", openHelp);
+$("#helpClose").addEventListener("click", closeHelp);
+$("#helpBg").addEventListener("click", e=>{ if(e.target.id==="helpBg") closeHelp(); });
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeHelp(); });
 
 /* ----------------------------- autocomplete ------------------------------- */
 // A live suggestion dropdown: filters item names as you type, tap/arrow to pick.

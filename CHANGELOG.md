@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-11-14
+
+### Added
+- **Privacy Policy and Terms of Use pages** (`privacy.html`, `terms.html`), linked
+  from a new footer along with a GitHub link and a © HayDay Tool line.
+- **Per-page help.** An ℹ️ button in the header opens a bottom sheet explaining
+  what the current tab is for and how to use it — tailored to whichever tab
+  you're on (Browse, Profit, Unlocks, Planner, List).
+
 ## [2.2.0] - 2026-11-14
 
 ### Added
