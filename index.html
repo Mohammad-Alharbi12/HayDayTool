@@ -546,6 +546,7 @@ const PROXIES = [
 const DATA_KEY = "haydaytool.data.v1";
 const LIST_KEY = "haydaytool.list.v1";
 const INV_KEY = "haydaytool.inv.v1";
+const PLAN_KEY = "haydaytool.plan.v1";
 const TTL = 60 * 60 * 1000; // 1h
 const CROP_MACHINES = ["crops", "trees & bushes"];
 const ANIMAL_MACHINES = ["animal products"];
@@ -568,7 +569,7 @@ const NAME_TO_ID = {};
 for (const id in RECIPES) NAME_TO_ID[RECIPES[id].name.toLowerCase()] = id;
 const RAW_MACHINES = new Set(["crops", "trees & bushes", "animal products"]);
 let NAME_MACHINE = {};   // product name -> machine, from live data
-let planTargets = [];    // [{name, qty}]
+let planTargets = loadPlan();    // [{name, qty}] — persisted across reloads
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -1277,8 +1278,15 @@ function renderPlanTargets(){
         `<span class="target-chip">${t.qty}× ${esc(t.name)} <button data-pt="${i}" title="Remove">×</button></span>`).join("") + `</div>`
     : "";
 }
+function loadPlan(){
+  try{ const a=JSON.parse(localStorage.getItem(PLAN_KEY));
+    return Array.isArray(a) ? a.filter(t=>t&&t.name).map(t=>({name:String(t.name), qty:Math.max(1,Math.floor(+t.qty||1))})) : [];
+  }catch(e){ return []; }
+}
+function savePlan(){ try{ localStorage.setItem(PLAN_KEY, JSON.stringify(planTargets)); }catch(e){} }
 function renderPlanner(){
   renderPlanTargets();
+  savePlan();
   const box = $("#planResult");
   if(!planTargets.length){ box.innerHTML = `<div class="empty">Add something to make above.</div>`; return; }
   const useInv = $("#planUseInv").checked;
