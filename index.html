@@ -260,6 +260,8 @@
     border-top:1px solid var(--line);border-bottom:1px solid var(--line);height:30px;line-height:30px}
   .have-chip{display:inline-block;background:#e6f0da;color:var(--leaf-d);border-radius:6px;
     padding:1px 6px;font-size:10.5px;font-weight:700;margin-left:4px;vertical-align:middle}
+  .nomatch{display:inline-block;background:#f6e2d6;color:#b4542a;border-radius:6px;
+    padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;vertical-align:middle}
   .spinner{width:14px;height:14px;border:2.5px solid #cfe3bb;border-top-color:var(--leaf);
     border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:-2px}
   @keyframes spin{to{transform:rotate(360deg)}}
@@ -551,6 +553,8 @@ const ZW = /[​-‏‪-‮⁠﻿]/g;
 
 let DATA = [];
 let ITEM_NAMES = [];
+let NAME_INDEX = {};     // normalized name -> canonical product name
+let NAME_INDEX_NS = {};  // normalized, spaces removed -> canonical product name
 let list = loadList();
 let inv = loadInv();
 let SHOTS = [];        // screenshots: [{id,url,ts}]
@@ -667,6 +671,7 @@ function onData(){
   NAME_MACHINE = {};
   for(const i of DATA) NAME_MACHINE[i.product.toLowerCase()] = i.machine;
   ITEM_NAMES = DATA.map(i=>i.product).sort((a,b)=>a.localeCompare(b));
+  buildNameIndex();
   fillMachineSelects();
   fillDatalist();
   renderBrowse();
@@ -1058,7 +1063,52 @@ function stepShot(d){ if(SHOTS.length) openShot((svIndex+d+SHOTS.length)%SHOTS.l
 const PROXY_URL = "https://hayday-ai-proxy-production.up.railway.app";
 const AI_PW_K = "haydaytool.ai.pw";
 const getPw = () => { try{ return localStorage.getItem(AI_PW_K)||""; }catch(e){ return ""; } };
-let detected = [];     // [{name,qty,type:'have'|'need',include}]
+let detected = [];     // [{name,qty,type:'have'|'need',include,matched}]
+
+/* Match an AI-returned name to the app's canonical item name so the math works */
+function normName(s){ return String(s||"").toLowerCase().replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim(); }
+function buildNameIndex(){
+  NAME_INDEX={}; NAME_INDEX_NS={};
+  for(const n of ITEM_NAMES){ const nn=normName(n); NAME_INDEX[nn]=n; NAME_INDEX_NS[nn.replace(/ /g,"")]=n; }
+}
+function tokenSim(a,b){
+  const A=new Set(a.split(" ").filter(Boolean)), Bl=b.split(" ").filter(Boolean), B=new Set(Bl);
+  if(!A.size||!B.size) return 0;
+  let inter=0; for(const t of A) if(B.has(t)) inter++;
+  const uni=new Set([...A, ...Bl]).size;
+  return uni?inter/uni:0;
+}
+function lev(a,b){
+  const m=a.length, n=b.length; if(!m) return n; if(!n) return m;
+  let prev=Array.from({length:n+1},(_,i)=>i), cur=new Array(n+1);
+  for(let i=1;i<=m;i++){ cur[0]=i;
+    for(let j=1;j<=n;j++){ const c=a[i-1]===b[j-1]?0:1; cur[j]=Math.min(prev[j]+1, cur[j-1]+1, prev[j-1]+c); }
+    const t=prev; prev=cur; cur=t;
+  }
+  return prev[n];
+}
+function levSim(a,b){ const L=Math.max(a.length,b.length); return L ? 1-lev(a,b)/L : 0; }
+function canonicalName(name){
+  const q=normName(name); if(!q) return null;
+  if(NAME_INDEX[q]) return NAME_INDEX[q];               // exact (normalized)
+  const qns=q.replace(/ /g,"");
+  if(NAME_INDEX_NS[qns]) return NAME_INDEX_NS[qns];     // spacing-insensitive exact
+  let best=null, score=0;
+  for(const n of ITEM_NAMES){
+    const nn=normName(n), nns=nn.replace(/ /g,"");
+    let s;
+    if(nns===qns) s=1;
+    else {
+      // substring match, weighted by how much of the longer string it covers
+      let sub=0;
+      if(nns.startsWith(qns)||qns.startsWith(nns)||nns.includes(qns)||qns.includes(nns))
+        sub = Math.min(qns.length,nns.length)/Math.max(qns.length,nns.length);
+      s = Math.max(sub, levSim(qns,nns), tokenSim(q,nn));
+    }
+    if(s>score){ score=s; best=n; }
+  }
+  return score>=0.62 ? best : null;
+}
 
 
 function extractJSON(t){
@@ -1076,7 +1126,7 @@ async function callVisionViaProxy(b64, media, pw){
   const res = await fetch(PROXY_URL, {
     method:"POST",
     headers:{ "content-type":"application/json", "x-access-password":pw },
-    body: JSON.stringify({ image:b64, media_type:media })
+    body: JSON.stringify({ image:b64, media_type:media, names:ITEM_NAMES })
   });
   if(!res.ok){
     if(res.status===401) throw new Error("Wrong access password");
@@ -1096,14 +1146,20 @@ async function readShotWithAI(){
     const blob=await (await fetch(shot.url)).blob();
     const b64=await blobToB64(blob);
     const items = await callVisionViaProxy(b64, blob.type||"image/jpeg", pw);
-    detected = items.map(x=>({
-      name:String(x && x.name||"").trim(),
-      qty:Math.max(1,Math.floor(+(x && x.qty)||1)),
-      type:(x && x.type==="have")?"have":"need",
-      include:true
-    })).filter(x=>x.name);
+    detected = items.map(x=>{
+      const rawName=String(x && x.name||"").trim();
+      const canon=canonicalName(rawName);
+      return {
+        name: canon || rawName,
+        matched: !!canon,
+        qty:Math.max(1,Math.floor(+(x && x.qty)||1)),
+        type:(x && x.type==="have")?"have":"need",
+        include: !!canon        // unmatched items start unchecked (they'd break the math)
+      };
+    }).filter(x=>x.name);
     renderDetected();
-    setSvStatus(detected.length?`Found ${detected.length}`:"Nothing found", detected.length?"":"err");
+    const unmatched = detected.filter(x=>!x.matched).length;
+    setSvStatus(detected.length?`Found ${detected.length}${unmatched?` · ${unmatched} unmatched`:""}`:"Nothing found", detected.length?"":"err");
   }catch(e){
     setSvStatus(String(e.message||e), "err");
   }finally{ $("#svRead").disabled=false; }
@@ -1115,7 +1171,7 @@ function renderDetected(){
     detected.map((x,i)=>`<div class="det" data-i="${i}">
       <input type="checkbox" data-detchk="${i}" ${x.include?"checked":""}>
       <input type="number" class="det-q" min="1" value="${x.qty}" data-detqty="${i}" aria-label="Quantity">
-      <span class="det-n">${esc(x.name)}</span>
+      <span class="det-n">${esc(x.name)}${x.matched?"":` <span class="nomatch" title="No matching Hay Day item found">no match</span>`}</span>
       <span class="seg">
         <button data-dettype="${i}" data-t="have" class="${x.type==="have"?"on":""}">Have</button>
         <button data-dettype="${i}" data-t="need" class="${x.type==="need"?"on":""}">Need</button>
