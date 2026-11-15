@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-11-15
+
+### Added
+- **AI screenshot reading (bring your own key).** Enter your own Anthropic API key
+  and the screenshot viewer gets a "Read with AI" button that auto-extracts the
+  items and amounts from a shot and sorts them into Have (inventory) vs. Need
+  (list), which you review and add with one tap. Key is stored only in your
+  browser and sent only to Anthropic; manual logging still works with no key.
+  Privacy policy updated to cover it.
+
 ## [2.4.0] - 2026-11-15
 
 ### Added

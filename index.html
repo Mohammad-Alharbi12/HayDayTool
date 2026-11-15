@@ -231,8 +231,19 @@
   .sv-count{color:#d6e6c6;font-size:14px;font-weight:600}
   .sv-img{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:4px 10px}
   .sv-img img{max-width:100%;max-height:100%;object-fit:contain;border-radius:10px}
-  .sv-log{background:#fff;border-radius:18px 18px 0 0;padding:12px 14px calc(12px + env(safe-area-inset-bottom))}
+  .sv-log{background:#fff;border-radius:18px 18px 0 0;padding:12px 14px calc(12px + env(safe-area-inset-bottom));max-height:62dvh;overflow-y:auto}
   .sv-log .lbl{font-size:12px;font-weight:800;color:var(--leaf-d);text-transform:uppercase;letter-spacing:.3px;margin:0 0 8px}
+  .sv-airow{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .sv-status{font-size:12.5px;color:var(--muted);font-weight:600}
+  .sv-status.err{color:var(--danger)}
+  .sv-status.busy{color:var(--leaf-d)}
+  #svDetected .det{display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid var(--line)}
+  #svDetected .det-q{font-weight:700;font-variant-numeric:tabular-nums;color:var(--leaf-d);flex:0 0 auto}
+  #svDetected .det-n{flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .seg{display:flex;flex:0 0 auto;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{border:0;background:#fff;color:var(--muted);font-size:12px;font-weight:700;padding:5px 9px;cursor:pointer}
+  .seg button.on{background:var(--leaf);color:#fff}
+  .ai-note{font-size:12px;color:var(--muted);margin-top:12px;line-height:1.55}
 
   /* qty stepper */
   .stepper{display:flex;align-items:center;flex:0 0 auto}
@@ -355,9 +366,13 @@
   <section id="tab-inventory" class="hide">
     <div class="card">
       <h2>My inventory</h2>
-      <p class="sub">Snap your barn, silo, truck/boat orders or the newspaper, then log what you have and need straight from the picture. Saved in this browser.</p>
+      <p class="sub">Snap your barn, silo, truck/boat orders or the newspaper, then read it with AI or log by hand. Saved in this browser.</p>
       <div class="shots" id="shotStrip"></div>
       <input type="file" id="shotInput" accept="image/*" multiple hidden>
+      <div class="row" style="margin-top:10px">
+        <button class="btn sm" id="aiSetupBtn">✨ Set up AI reading</button>
+        <span class="sub" id="aiStateHint" style="flex:1;margin:0;align-self:center"></span>
+      </div>
     </div>
 
     <div class="card">
@@ -450,6 +465,22 @@
   </nav>
 </div>
 
+<div class="sheet-bg" id="aiKeyBg">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="aiKeyTitle">
+    <div class="sheet-h"><h2 id="aiKeyTitle">✨ AI screenshot reading</h2><button class="sheet-x" id="aiKeyClose" aria-label="Close">×</button></div>
+    <p>Add your own Anthropic API key and the app can read a screenshot and pull out the items and amounts for you automatically.</p>
+    <label class="fld" style="display:block;margin-bottom:8px">API key
+      <input type="password" id="aiKeyInput" placeholder="sk-ant-..." autocomplete="off" style="width:100%"></label>
+    <label class="fld" style="display:block">Model
+      <input type="text" id="aiModelInput" placeholder="claude-sonnet-5-5" autocomplete="off" style="width:100%"></label>
+    <div class="row" style="margin-top:14px">
+      <button class="btn primary" id="aiKeySave">Save</button>
+      <button class="btn ghost" id="aiKeyClear">Remove key</button>
+    </div>
+    <p class="ai-note">🔒 Your key is stored only in this browser (this device) and is sent only to Anthropic when you read a screenshot — never to us or anyone else. Each read uses your own Anthropic account and costs a small amount per image. Get a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. If others use this site, they each add their own key.</p>
+  </div>
+</div>
+
 <div class="shotview" id="shotView">
   <div class="sv-top">
     <button id="svPrev" aria-label="Previous">‹</button>
@@ -461,7 +492,14 @@
   </div>
   <div class="sv-img"><img id="svImg" alt="Screenshot"></div>
   <div class="sv-log">
-    <div class="lbl">Log from this screenshot</div>
+    <div class="sv-airow">
+      <button class="btn sm primary" id="svRead">✨ Read with AI</button>
+      <span class="sv-status" id="svStatus"></span>
+      <span style="flex:1"></span>
+      <button class="btn sm ghost" id="svKeyBtn">API key</button>
+    </div>
+    <div id="svDetected"></div>
+    <div class="lbl" style="margin-top:12px">Or log by hand</div>
     <div class="row">
       <div class="ac search up" style="flex:1 1 150px;min-width:120px">
         <input id="svItem" type="search" autocomplete="off" placeholder="Item name" style="width:100%">
@@ -746,15 +784,16 @@ function findInData(name){
   const q = clean(name).toLowerCase();
   return DATA.find(i=>i.product.toLowerCase()===q) || DATA.find(i=>i.product.toLowerCase().includes(q)) || null;
 }
-function addToList(name, amount){
+function addToList(name, amount, quiet){
   const item = findInData(name);
-  if(!item){ toast(`"${name}" isn't a known item`); return; }
+  if(!item){ if(!quiet) toast(`"${name}" isn't a known item`); return false; }
   const n = Math.max(1, Math.floor(amount||1));
   const ex = list.items.find(x=>x.product.toLowerCase()===item.product.toLowerCase());
   if(ex){ ex.amount += n; ex.machine = item.machine; }
   else list.items.push({ product:item.product, machine:item.machine, amount:n, checked:false });
-  saveList(); renderList(); updateListCount();
-  toast(`Added ${n}× ${item.product}`);
+  saveList();
+  if(!quiet){ renderList(); updateListCount(); toast(`Added ${n}× ${item.product}`); }
+  return true;
 }
 function summarize(){
   // "need" per store = items on the list not yet checked off (what you still have to collect)
@@ -866,17 +905,19 @@ function saveInv(){ try{ localStorage.setItem(INV_KEY, JSON.stringify(inv)); }ca
 function updateInvCount(){ const n=inv.items.length; $("#invCount").textContent = n?String(n):""; }
 function invHave(name){ const it=inv.items.find(x=>x.product.toLowerCase()===String(name).toLowerCase()); return it?it.qty:0; }
 function invUsed(){ const u={barn:0,silo:0}; for(const it of inv.items) u[storageOf(it.machine)]+=it.qty; return u; }
-function addToInv(name, qty){
+function addToInv(name, qty, quiet){
   const item=findInData(name);
   const nm = item?item.product:clean(name);
-  if(!nm){ toast("Type an item"); return; }
+  if(!nm){ if(!quiet) toast("Type an item"); return false; }
   const machine = item?item.machine:(machineOfName(nm)||"Animal Products");
   const n=Math.max(1,Math.floor(qty||1));
   const ex=inv.items.find(x=>x.product.toLowerCase()===nm.toLowerCase());
   if(ex){ ex.qty+=n; ex.machine=machine; } else inv.items.push({ product:nm, machine, qty:n });
-  saveInv(); renderInv(); updateInvCount();
-  const cur=inv.items.find(x=>x.product.toLowerCase()===nm.toLowerCase());
-  toast(`Have ${cur?cur.qty:n}× ${nm}`);
+  saveInv();
+  if(!quiet){ renderInv(); updateInvCount();
+    const cur=inv.items.find(x=>x.product.toLowerCase()===nm.toLowerCase());
+    toast(`Have ${cur?cur.qty:n}× ${nm}`); }
+  return true;
 }
 function renderInvSummary(){
   const u=invUsed();
@@ -1001,10 +1042,112 @@ function openShot(i){
   svIndex=Math.max(0,Math.min(i,SHOTS.length-1));
   $("#svImg").src=SHOTS[svIndex].url;
   $("#svCount").textContent=`${svIndex+1} / ${SHOTS.length}`;
+  detected=[]; if(typeof renderDetected==="function") renderDetected(); setSvStatus("");
   $("#shotView").classList.add("open");
 }
 function closeShot(){ $("#shotView").classList.remove("open"); }
 function stepShot(d){ if(SHOTS.length) openShot((svIndex+d+SHOTS.length)%SHOTS.length); }
+
+/* --- AI screenshot reading (user's own Anthropic key, browser-direct) --- */
+const AI_KEY_K="haydaytool.ai.key", AI_MODEL_K="haydaytool.ai.model", AI_MODEL_DEFAULT="claude-sonnet-5-5";
+const getKey   = () => { try{ return localStorage.getItem(AI_KEY_K)||""; }catch(e){ return ""; } };
+const getModel = () => { try{ return localStorage.getItem(AI_MODEL_K)||AI_MODEL_DEFAULT; }catch(e){ return AI_MODEL_DEFAULT; } };
+let detected = [];     // [{name,qty,type:'have'|'need',include}]
+
+const VISION_PROMPT = `You are reading a screenshot from the mobile farming game Hay Day. List every game good/item you can identify, each with its quantity (the number shown by it; if none is shown use 1). For each item set "type": "have" if it's in the player's own storage (a barn or silo view, or an inventory grid), or "need" if it's being requested (a truck order, boat/export crate, town visitor, or the newspaper/shop wanted ads). Use the item's standard Hay Day name, e.g. "Bread", "Corn", "Bacon Pie". Respond with ONLY valid JSON in exactly this shape, no prose and no code fences: {"items":[{"name":"Bread","qty":3,"type":"need"}]}. If the screen is clearly storage, use "have" for all; if it's an orders/newspaper screen, use "need" for all. If you truly can't read any items, return {"items":[]}.`;
+
+function extractJSON(t){
+  if(!t) return null;
+  let s=String(t).trim().replace(/^```(?:json)?/i,"").replace(/```$/,"").trim();
+  const a=s.indexOf("{"), b=s.lastIndexOf("}");
+  if(a<0||b<0) return null;
+  try{ return JSON.parse(s.slice(a,b+1)); }catch(e){ return null; }
+}
+function blobToB64(blob){
+  return new Promise((res,rej)=>{ const r=new FileReader();
+    r.onload=()=>res(String(r.result).split(",")[1]); r.onerror=()=>rej(new Error("read")); r.readAsDataURL(blob); });
+}
+async function callClaudeVision(b64, media, key){
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method:"POST",
+    headers:{ "x-api-key":key, "anthropic-version":"2023-06-01",
+      "anthropic-dangerous-direct-browser-access":"true", "content-type":"application/json" },
+    body: JSON.stringify({ model:getModel(), max_tokens:1024, messages:[{ role:"user", content:[
+      { type:"image", source:{ type:"base64", media_type:media, data:b64 } },
+      { type:"text", text: VISION_PROMPT }
+    ]}]})
+  });
+  if(!res.ok){ let m=""; try{ m=(await res.json()).error?.message||""; }catch(_){}
+    throw new Error("API "+res.status+(m?": "+m:"")); }
+  const data=await res.json();
+  const text=(data.content||[]).filter(c=>c.type==="text").map(c=>c.text).join("\n");
+  const j=extractJSON(text);
+  return (j && Array.isArray(j.items)) ? j.items : [];
+}
+function setSvStatus(msg, kind){ const el=$("#svStatus"); el.textContent=msg||""; el.className="sv-status"+(kind?" "+kind:""); }
+async function readShotWithAI(){
+  const key=getKey();
+  if(!key){ toast("Add your API key first"); openAIKey(); return; }
+  const shot=SHOTS[svIndex]; if(!shot) return;
+  setSvStatus("Reading…","busy"); $("#svRead").disabled=true;
+  try{
+    const blob=await (await fetch(shot.url)).blob();
+    const b64=await blobToB64(blob);
+    const items=await callClaudeVision(b64, blob.type||"image/jpeg", key);
+    detected = items.map(x=>({
+      name:String(x && x.name||"").trim(),
+      qty:Math.max(1,Math.floor(+(x && x.qty)||1)),
+      type:(x && x.type==="have")?"have":"need",
+      include:true
+    })).filter(x=>x.name);
+    renderDetected();
+    setSvStatus(detected.length?`Found ${detected.length}`:"Nothing found", detected.length?"":"err");
+  }catch(e){
+    setSvStatus(String(e.message||e), "err");
+  }finally{ $("#svRead").disabled=false; }
+}
+function renderDetected(){
+  const el=$("#svDetected");
+  if(!detected.length){ el.innerHTML=""; return; }
+  el.innerHTML = `<div class="lbl" style="margin-top:10px">Detected — check, set Have/Need, then add</div>` +
+    detected.map((x,i)=>`<div class="det" data-i="${i}">
+      <input type="checkbox" data-detchk="${i}" ${x.include?"checked":""}>
+      <span class="det-q">${x.qty}×</span>
+      <span class="det-n">${esc(x.name)}</span>
+      <span class="seg">
+        <button data-dettype="${i}" data-t="have" class="${x.type==="have"?"on":""}">Have</button>
+        <button data-dettype="${i}" data-t="need" class="${x.type==="need"?"on":""}">Need</button>
+      </span>
+    </div>`).join("") +
+    `<div class="row" style="margin-top:10px">
+      <button class="btn sm primary" id="detAdd">Add selected</button>
+      <button class="btn sm ghost" id="detClear">Dismiss</button>
+    </div>`;
+}
+function detAddSelected(){
+  let have=0, need=0, skip=0;
+  for(const x of detected){
+    if(!x.include) continue;
+    if(x.type==="have"){ addToInv(x.name, x.qty, true); have++; }
+    else { addToList(x.name, x.qty, true) ? need++ : skip++; }
+  }
+  renderInv(); updateInvCount(); renderList(); updateListCount();
+  detected=[]; renderDetected(); setSvStatus("");
+  const parts=[]; if(have)parts.push(`${have} to inventory`); if(need)parts.push(`${need} to list`);
+  toast((parts.join(" · ")||"Nothing added")+(skip?` · ${skip} unknown skipped`:""));
+}
+
+/* API-key sheet */
+function refreshAIHint(){
+  const el=$("#aiStateHint"); if(!el) return;
+  el.textContent = getKey() ? "AI reading is on — tap a screenshot, then “Read with AI”." : "Off — add your key to read screenshots automatically.";
+}
+function openAIKey(){
+  $("#aiKeyInput").value = getKey();
+  $("#aiModelInput").value = getModel();
+  $("#aiKeyBg").classList.add("open");
+}
+function closeAIKey(){ $("#aiKeyBg").classList.remove("open"); }
 
 /* ----------------------------- PLANNER ------------------------------------ */
 function machineOfName(n){ return NAME_MACHINE[String(n||"").toLowerCase()] || null; }
@@ -1127,7 +1270,7 @@ function switchTab(name){
   ["browse","profit","unlocks","planner","inventory","list"].forEach(t=>$("#tab-"+t).classList.toggle("hide", t!==name));
   if(name==="list") renderList();
   if(name==="planner") renderPlanner();
-  if(name==="inventory"){ renderInv(); renderShots(); if(!shotsLoaded){ shotsLoaded=true; loadShots(); } }
+  if(name==="inventory"){ renderInv(); renderShots(); refreshAIHint(); if(!shotsLoaded){ shotsLoaded=true; loadShots(); } }
 }
 
 /* ------------------------------- per-page help ---------------------------- */
@@ -1309,6 +1452,35 @@ $("#svHave").addEventListener("click", ()=>{ addToInv($("#svItem").value, +$("#s
 $("#svNeed").addEventListener("click", ()=>{
   const n=clean($("#svItem").value); if(!n){ toast("Type an item"); return; }
   addToList(n, +$("#svQty").value||1); $("#svItem").value=""; $("#svQty").value=1;
+});
+
+// AI screenshot reading
+$("#svRead").addEventListener("click", readShotWithAI);
+$("#svKeyBtn").addEventListener("click", openAIKey);
+$("#aiSetupBtn").addEventListener("click", openAIKey);
+$("#aiKeyClose").addEventListener("click", closeAIKey);
+$("#aiKeyBg").addEventListener("click", e=>{ if(e.target.id==="aiKeyBg") closeAIKey(); });
+$("#aiKeySave").addEventListener("click", ()=>{
+  const k=$("#aiKeyInput").value.trim(), m=$("#aiModelInput").value.trim();
+  try{
+    if(k) localStorage.setItem(AI_KEY_K, k); else localStorage.removeItem(AI_KEY_K);
+    localStorage.setItem(AI_MODEL_K, m || AI_MODEL_DEFAULT);
+  }catch(e){}
+  refreshAIHint(); closeAIKey(); toast(k?"AI reading ready":"Key removed");
+});
+$("#aiKeyClear").addEventListener("click", ()=>{
+  try{ localStorage.removeItem(AI_KEY_K); }catch(e){}
+  $("#aiKeyInput").value=""; refreshAIHint(); toast("Key removed");
+});
+$("#svDetected").addEventListener("click", e=>{
+  const seg=e.target.closest("[data-dettype]");
+  if(seg){ const i=+seg.dataset.dettype; if(detected[i]){ detected[i].type=seg.dataset.t; renderDetected(); } return; }
+  if(e.target.closest("#detAdd")){ detAddSelected(); return; }
+  if(e.target.closest("#detClear")){ detected=[]; renderDetected(); setSvStatus(""); return; }
+});
+$("#svDetected").addEventListener("change", e=>{
+  const chk=e.target.closest("[data-detchk]");
+  if(chk){ const i=+chk.dataset.detchk; if(detected[i]) detected[i].include=chk.checked; }
 });
 
 $("#refreshBtn").addEventListener("click", ()=>loadData({force:true}));
