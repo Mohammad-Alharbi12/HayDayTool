@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 2026-11-15
+
+### Changed
+- **AI screenshot reading now runs through a private, password-gated server**
+  instead of a per-user Anthropic key. The owner's Anthropic key lives only as a
+  server secret (never in the page); turning on AI reading just takes an access
+  password, entered once per device. Reads are limited to whoever has the
+  password. Privacy policy updated to match.
+
 ## [2.5.0] - 2026-11-15
 
 ### Added

@@ -468,16 +468,14 @@
 <div class="sheet-bg" id="aiKeyBg">
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="aiKeyTitle">
     <div class="sheet-h"><h2 id="aiKeyTitle">✨ AI screenshot reading</h2><button class="sheet-x" id="aiKeyClose" aria-label="Close">×</button></div>
-    <p>Add your own Anthropic API key and the app can read a screenshot and pull out the items and amounts for you automatically.</p>
-    <label class="fld" style="display:block;margin-bottom:8px">API key
-      <input type="password" id="aiKeyInput" placeholder="sk-ant-..." autocomplete="off" style="width:100%"></label>
-    <label class="fld" style="display:block">Model
-      <input type="text" id="aiModelInput" placeholder="claude-sonnet-5-5" autocomplete="off" style="width:100%"></label>
+    <p>Enter the access password to turn on AI screenshot reading. Reads run through this app's own secure server — no API key needed on your phone.</p>
+    <label class="fld" style="display:block">Access password
+      <input type="password" id="aiKeyInput" placeholder="access password" autocomplete="off" style="width:100%"></label>
     <div class="row" style="margin-top:14px">
       <button class="btn primary" id="aiKeySave">Save</button>
-      <button class="btn ghost" id="aiKeyClear">Remove key</button>
+      <button class="btn ghost" id="aiKeyClear">Turn off</button>
     </div>
-    <p class="ai-note">🔒 Your key is stored only in this browser (this device) and is sent only to Anthropic when you read a screenshot — never to us or anyone else. Each read uses your own Anthropic account and costs a small amount per image. Get a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>. If others use this site, they each add their own key.</p>
+    <p class="ai-note">🔒 The password is stored only in this browser (this device). A screenshot is only sent — to the app's own server and on to Anthropic — when you tap “Read with AI” with the right password. Without it, nothing is read and nothing leaves your device.</p>
   </div>
 </div>
 
@@ -1048,13 +1046,14 @@ function openShot(i){
 function closeShot(){ $("#shotView").classList.remove("open"); }
 function stepShot(d){ if(SHOTS.length) openShot((svIndex+d+SHOTS.length)%SHOTS.length); }
 
-/* --- AI screenshot reading (user's own Anthropic key, browser-direct) --- */
-const AI_KEY_K="haydaytool.ai.key", AI_MODEL_K="haydaytool.ai.model", AI_MODEL_DEFAULT="claude-sonnet-5-5";
-const getKey   = () => { try{ return localStorage.getItem(AI_KEY_K)||""; }catch(e){ return ""; } };
-const getModel = () => { try{ return localStorage.getItem(AI_MODEL_K)||AI_MODEL_DEFAULT; }catch(e){ return AI_MODEL_DEFAULT; } };
+/* --- AI screenshot reading (private, password-gated server proxy) --- */
+// Screenshots are read through this proxy; the Anthropic key stays server-side.
+// AI reading is gated by an access password only you know.
+const PROXY_URL = "https://hayday-ai-proxy-production.up.railway.app";
+const AI_PW_K = "haydaytool.ai.pw";
+const getPw = () => { try{ return localStorage.getItem(AI_PW_K)||""; }catch(e){ return ""; } };
 let detected = [];     // [{name,qty,type:'have'|'need',include}]
 
-const VISION_PROMPT = `You are reading a screenshot from the mobile farming game Hay Day. List every game good/item you can identify, each with its quantity (the number shown by it; if none is shown use 1). For each item set "type": "have" if it's in the player's own storage (a barn or silo view, or an inventory grid), or "need" if it's being requested (a truck order, boat/export crate, town visitor, or the newspaper/shop wanted ads). Use the item's standard Hay Day name, e.g. "Bread", "Corn", "Bacon Pie". Respond with ONLY valid JSON in exactly this shape, no prose and no code fences: {"items":[{"name":"Bread","qty":3,"type":"need"}]}. If the screen is clearly storage, use "have" for all; if it's an orders/newspaper screen, use "need" for all. If you truly can't read any items, return {"items":[]}.`;
 
 function extractJSON(t){
   if(!t) return null;
@@ -1067,33 +1066,30 @@ function blobToB64(blob){
   return new Promise((res,rej)=>{ const r=new FileReader();
     r.onload=()=>res(String(r.result).split(",")[1]); r.onerror=()=>rej(new Error("read")); r.readAsDataURL(blob); });
 }
-async function callClaudeVision(b64, media, key){
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+async function callVisionViaProxy(b64, media, pw){
+  const res = await fetch(PROXY_URL, {
     method:"POST",
-    headers:{ "x-api-key":key, "anthropic-version":"2023-06-01",
-      "anthropic-dangerous-direct-browser-access":"true", "content-type":"application/json" },
-    body: JSON.stringify({ model:getModel(), max_tokens:1024, messages:[{ role:"user", content:[
-      { type:"image", source:{ type:"base64", media_type:media, data:b64 } },
-      { type:"text", text: VISION_PROMPT }
-    ]}]})
+    headers:{ "content-type":"application/json", "x-access-password":pw },
+    body: JSON.stringify({ image:b64, media_type:media })
   });
-  if(!res.ok){ let m=""; try{ m=(await res.json()).error?.message||""; }catch(_){}
-    throw new Error("API "+res.status+(m?": "+m:"")); }
+  if(!res.ok){
+    if(res.status===401) throw new Error("Wrong access password");
+    let m=""; try{ m=(await res.json()).error||""; }catch(_){}
+    throw new Error("Proxy "+res.status+(m?": "+m:""));
+  }
   const data=await res.json();
-  const text=(data.content||[]).filter(c=>c.type==="text").map(c=>c.text).join("\n");
-  const j=extractJSON(text);
-  return (j && Array.isArray(j.items)) ? j.items : [];
+  return Array.isArray(data.items)?data.items:[];
 }
 function setSvStatus(msg, kind){ const el=$("#svStatus"); el.textContent=msg||""; el.className="sv-status"+(kind?" "+kind:""); }
 async function readShotWithAI(){
-  const key=getKey();
-  if(!key){ toast("Add your API key first"); openAIKey(); return; }
+  const pw=getPw();
+  if(!pw){ toast("Enter the access password first"); openAIKey(); return; }
   const shot=SHOTS[svIndex]; if(!shot) return;
   setSvStatus("Reading…","busy"); $("#svRead").disabled=true;
   try{
     const blob=await (await fetch(shot.url)).blob();
     const b64=await blobToB64(blob);
-    const items=await callClaudeVision(b64, blob.type||"image/jpeg", key);
+    const items = await callVisionViaProxy(b64, blob.type||"image/jpeg", pw);
     detected = items.map(x=>({
       name:String(x && x.name||"").trim(),
       qty:Math.max(1,Math.floor(+(x && x.qty)||1)),
@@ -1140,11 +1136,12 @@ function detAddSelected(){
 /* API-key sheet */
 function refreshAIHint(){
   const el=$("#aiStateHint"); if(!el) return;
-  el.textContent = getKey() ? "AI reading is on — tap a screenshot, then “Read with AI”." : "Off — add your key to read screenshots automatically.";
+  el.textContent = getPw()
+    ? "AI reading is on — tap a screenshot, then “Read with AI”."
+    : "Off — enter the access password to turn on AI reading.";
 }
 function openAIKey(){
-  $("#aiKeyInput").value = getKey();
-  $("#aiModelInput").value = getModel();
+  $("#aiKeyInput").value = getPw();
   $("#aiKeyBg").classList.add("open");
 }
 function closeAIKey(){ $("#aiKeyBg").classList.remove("open"); }
@@ -1461,16 +1458,13 @@ $("#aiSetupBtn").addEventListener("click", openAIKey);
 $("#aiKeyClose").addEventListener("click", closeAIKey);
 $("#aiKeyBg").addEventListener("click", e=>{ if(e.target.id==="aiKeyBg") closeAIKey(); });
 $("#aiKeySave").addEventListener("click", ()=>{
-  const k=$("#aiKeyInput").value.trim(), m=$("#aiModelInput").value.trim();
-  try{
-    if(k) localStorage.setItem(AI_KEY_K, k); else localStorage.removeItem(AI_KEY_K);
-    localStorage.setItem(AI_MODEL_K, m || AI_MODEL_DEFAULT);
-  }catch(e){}
-  refreshAIHint(); closeAIKey(); toast(k?"AI reading ready":"Key removed");
+  const pw=$("#aiKeyInput").value.trim();
+  try{ if(pw) localStorage.setItem(AI_PW_K, pw); else localStorage.removeItem(AI_PW_K); }catch(e){}
+  refreshAIHint(); closeAIKey(); toast(pw?"AI reading ready":"Turned off");
 });
 $("#aiKeyClear").addEventListener("click", ()=>{
-  try{ localStorage.removeItem(AI_KEY_K); }catch(e){}
-  $("#aiKeyInput").value=""; refreshAIHint(); toast("Key removed");
+  try{ localStorage.removeItem(AI_PW_K); }catch(e){}
+  $("#aiKeyInput").value=""; refreshAIHint(); toast("Turned off");
 });
 $("#svDetected").addEventListener("click", e=>{
   const seg=e.target.closest("[data-dettype]");
