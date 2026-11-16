@@ -1320,12 +1320,23 @@ async function verifyViaProxy(screenshotB64, media, guess, cands){
   const d = await res.json();
   return d && d.name ? d.name : guess;
 }
+// Known cross-building confusions: guesses that get mixed up with items from
+// another building. These extra icons are added to the verify candidate set so
+// the model can compare the real form (e.g. cubes vs a bag) directly.
+const EXTRA_VERIFY = {
+  "brown sugar": ["Toffee"],
+  "white sugar": ["Toffee"],
+  "toffee": ["Brown sugar", "White sugar"],
+};
 // Double-check a matched name against its look-alike siblings; returns a (maybe corrected) canonical name.
 async function verifyItemName(screenshotB64, media, canonName){
-  const sibs = confusableCluster(canonName);
-  if(sibs.length<2) return canonName;
+  const names=[];
+  for(const s of confusableCluster(canonName)) names.push(s.product);
+  for(const e of (EXTRA_VERIFY[String(canonName).toLowerCase()]||[]))
+    if(!names.some(n=>n.toLowerCase()===e.toLowerCase())) names.push(e);
+  if(names.length<2) return canonName;
   const cands=[];
-  for(const s of sibs){ try{ cands.push({ name:s.product, img: await thumbB64(s.img), media:"image/webp" }); }catch(e){} }
+  for(const nm of names){ const it=findInData(nm); if(!it||!it.img) continue; try{ cands.push({ name:it.product, img: await thumbB64(it.img), media:"image/webp" }); }catch(e){} }
   if(cands.length<2) return canonName;
   const picked = await verifyViaProxy(screenshotB64, media, canonName, cands);
   const c = findInData(picked) || (canonicalName(picked) ? findInData(canonicalName(picked)) : null);
