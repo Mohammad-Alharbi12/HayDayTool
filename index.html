@@ -528,6 +528,10 @@
     <p>Enter the access password to turn on AI screenshot reading. Reads run through this app's own secure server — no API key needed on your phone.</p>
     <label class="fld" style="display:block">Access password
       <input type="password" id="aiKeyInput" placeholder="access password" autocomplete="off" style="width:100%"></label>
+    <label style="display:flex;align-items:flex-start;gap:9px;margin-top:14px;cursor:pointer;font-size:14px">
+      <input type="checkbox" id="aiVerify" checked style="width:18px;height:18px;flex:0 0 auto;margin-top:1px">
+      <span>Double-check look-alike items by comparing the screenshot to the real item icons. More accurate for things like the doners, pies and smoothies — uses a little extra AI per scan.</span>
+    </label>
     <div class="row" style="margin-top:14px">
       <button class="btn primary" id="aiKeySave">Save</button>
       <button class="btn ghost" id="aiKeyClear">Turn off</button>
@@ -1288,6 +1292,45 @@ async function callVisionViaProxy(b64, media, pw, mode){
   const data=await res.json();
   return Array.isArray(data.items)?data.items:[];
 }
+
+/* --- Reference-image double-check for look-alike items --- */
+const AI_VERIFY_K = "haydaytool.ai.verify";
+const aiVerifyOn = () => { try{ return localStorage.getItem(AI_VERIFY_K) !== "0"; }catch(e){ return true; } };  // default on
+// Machines whose goods are visually distinct (raw crops/animal/ore) — no need to verify.
+const SKIP_VERIFY_MACHINES = new Set(["crops","trees & bushes","animal products","mine","smelter"]);
+// The look-alike siblings of an item = other goods from the same machine.
+function confusableCluster(name){
+  const m = NAME_MACHINE[String(name||"").toLowerCase()];
+  if(!m || SKIP_VERIFY_MACHINES.has(m.toLowerCase())) return [];
+  const sibs = DATA.filter(i=>i.machine===m && i.img);
+  return sibs.length>=2 ? sibs : [];
+}
+async function thumbB64(img){
+  const r = await fetch("assets/items/"+img);
+  const b = await r.blob();
+  return await blobToB64(b);
+}
+async function verifyViaProxy(screenshotB64, media, guess, cands){
+  const res = await fetch(PROXY_URL, {
+    method:"POST",
+    headers:{ "content-type":"application/json", "x-access-password":getPw() },
+    body: JSON.stringify({ mode:"verify", image:screenshotB64, media_type:media||"image/jpeg", guess, candidates:cands })
+  });
+  if(!res.ok) throw new Error("verify "+res.status);
+  const d = await res.json();
+  return d && d.name ? d.name : guess;
+}
+// Double-check a matched name against its look-alike siblings; returns a (maybe corrected) canonical name.
+async function verifyItemName(screenshotB64, media, canonName){
+  const sibs = confusableCluster(canonName);
+  if(sibs.length<2) return canonName;
+  const cands=[];
+  for(const s of sibs){ try{ cands.push({ name:s.product, img: await thumbB64(s.img), media:"image/webp" }); }catch(e){} }
+  if(cands.length<2) return canonName;
+  const picked = await verifyViaProxy(screenshotB64, media, canonName, cands);
+  const c = findInData(picked) || (canonicalName(picked) ? findInData(canonicalName(picked)) : null);
+  return c ? c.product : canonName;
+}
 function setSvStatus(msg, kind){ const el=$("#svStatus"); el.textContent=msg||""; el.className="sv-status"+(kind?" "+kind:""); }
 async function readShotWithAI(){
   const pw=getPw();
@@ -1307,7 +1350,11 @@ async function readShotWithAI(){
     // Auto-add everything we could match straight into inventory
     const matched = parsed.filter(x=>x.matched);
     detUnmatched = parsed.filter(x=>!x.matched);
-    for(const x of matched) addToInv(x.name, x.qty, true);
+    for(const x of matched){
+      let nm = x.name;
+      if(aiVerifyOn()){ try{ setSvStatus("Double-checking look-alikes…","busy"); nm = await verifyItemName(b64, blob.type||"image/jpeg", x.name); }catch(e){} }
+      addToInv(nm, x.qty, true);
+    }
     renderInv(); updateInvCount();
     renderUnmatched($("#svDetected"), matched.length);
     setSvStatus(matched.length
@@ -1353,8 +1400,9 @@ async function scanOrders(files){
       for(const x of items){
         const raw=String(x && x.name||"").trim(); if(!raw) continue;
         const qty=Math.max(1,Math.floor(+(x && x.qty)||1));
-        const canon=canonicalName(raw);
+        let canon=canonicalName(raw);
         if(!canon){ unmatched.push({name:raw, qty}); continue; }
+        if(aiVerifyOn()){ try{ setPlanScanStatus(`Double-checking look-alikes…`,"busy"); canon=await verifyItemName(b64, blob.type||"image/jpeg", canon); }catch(e){} }
         const ex=planTargets.find(t=>t.name.toLowerCase()===canon.toLowerCase());
         if(ex) ex.qty+=qty; else planTargets.push({ name:canon, qty });
         added++;
@@ -1389,9 +1437,12 @@ async function batchReadAll(){
       const items=await callVisionViaProxy(b64, blob.type||"image/jpeg", pw);
       for(const x of items){
         const raw=String(x && x.name||"").trim(); if(!raw) continue;
-        const canon=canonicalName(raw);
+        let canon=canonicalName(raw);
         const qty=Math.max(1,Math.floor(+(x && x.qty)||1));
-        if(canon){ addToInv(canon, qty, true); added++; }
+        if(canon){
+          if(aiVerifyOn()){ try{ setInvAiStatus(`Double-checking look-alikes (${i+1}/${SHOTS.length})…`,"busy"); canon=await verifyItemName(b64, blob.type||"image/jpeg", canon); }catch(e){} }
+          addToInv(canon, qty, true); added++;
+        }
         else detUnmatched.push({ name:raw, qty });
       }
     }catch(e){ failed++; }
@@ -1411,6 +1462,7 @@ function refreshAIHint(){
 }
 function openAIKey(){
   $("#aiKeyInput").value = getPw();
+  const v=$("#aiVerify"); if(v) v.checked = aiVerifyOn();
   $("#aiKeyBg").classList.add("open");
 }
 function closeAIKey(){ $("#aiKeyBg").classList.remove("open"); }
@@ -1839,8 +1891,10 @@ $("#aiKeyBg").addEventListener("click", e=>{ if(e.target.id==="aiKeyBg") closeAI
 $("#aiKeySave").addEventListener("click", ()=>{
   const pw=$("#aiKeyInput").value.trim();
   try{ if(pw) localStorage.setItem(AI_PW_K, pw); else localStorage.removeItem(AI_PW_K); }catch(e){}
+  try{ localStorage.setItem(AI_VERIFY_K, $("#aiVerify").checked ? "1" : "0"); }catch(e){}
   refreshAIHint(); closeAIKey(); toast(pw?"AI reading ready":"Turned off");
 });
+$("#aiVerify").addEventListener("change", e=>{ try{ localStorage.setItem(AI_VERIFY_K, e.target.checked?"1":"0"); }catch(_){} });
 $("#aiKeyClear").addEventListener("click", ()=>{
   try{ localStorage.removeItem(AI_PW_K); }catch(e){}
   $("#aiKeyInput").value=""; refreshAIHint(); toast("Turned off");

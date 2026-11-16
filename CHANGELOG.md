@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [2.17.0] - 2026-11-16
+
+### Added
+- **Reference-image double-check for look-alike items.** After the AI reads a
+  screenshot, any item that has visually-similar siblings (same production
+  building — the doners, pies, juices, smoothies, teas, cakes, etc.) is
+  re-checked by comparing the screenshot against the real game icons of each
+  candidate, so it picks the right variant instead of guessing from a shrunk
+  thumbnail. Visually-distinct raw goods (crops, fruit, ore, bars) are skipped.
+  Toggle it in the AI settings (on by default; uses a little extra AI per scan).
+
 ## [2.16.0] - 2026-11-16
 
 ### Added
