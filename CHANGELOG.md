@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.0] - 2026-11-15
+
+### Added
+- **Scan orders into the planner.** "📷 Scan orders with AI" on the Planner tab
+  takes one or more truck / boat / town order screenshots, reads the goods each
+  order asks for (using the required amount, not what you hold), adds them as
+  things to make, and nets the plan against your inventory.
+
+### Fixed
+- Screenshot reading now drops goods shown with a count of 0 instead of
+  rounding them up to 1.
+
 ## [2.10.0] - 2026-11-15
 
 ### Changed
