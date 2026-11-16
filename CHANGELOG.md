@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [2.15.0] - 2026-11-16
+
+### Added
+- **Tap-to-fix in the planner.** Scanned order items now show their thumbnail
+  and can be corrected in one tap, same as inventory — handy when the AI picks
+  the wrong near-identical icon (e.g. the doner variants).
+
+### Changed
+- **Higher-resolution order scans.** Order screenshots are sent at 1568px (the
+  vision API's own cap) so tiny order icons keep as much detail as possible.
+
 ## [2.14.0] - 2026-11-16
 
 ### Added

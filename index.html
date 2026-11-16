@@ -186,6 +186,11 @@
     border:1px solid #d7e7c6;border-radius:999px;padding:6px 8px 6px 13px;font-size:13px;font-weight:650}
   .target-chip button{border:0;background:#cfe0ba;color:var(--leaf-d);width:22px;height:22px;border-radius:50%;
     font-size:15px;line-height:1;padding:0}
+  .target-chip .tgt-main{background:transparent;width:auto;height:auto;border-radius:0;padding:0;
+    display:inline-flex;align-items:center;gap:6px;color:var(--leaf-d);font-size:13px;font-weight:650;cursor:pointer}
+  .thumb-xs{width:24px;height:24px;object-fit:contain;border-radius:6px;background:#fff;border:1px solid #d7e7c6;padding:1px;flex:0 0 auto}
+  .target-chip .swapin{width:150px;max-width:52vw;font-size:14px;font-weight:650;padding:5px 8px;border:1.5px solid var(--leaf);border-radius:9px;background:#fff}
+  .target-chip .swapok{width:auto;height:auto;border-radius:9px;background:var(--leaf);color:#fff;font-size:14px;font-weight:800;padding:5px 10px}
 
   /* Bottom tab bar */
   .tabbar{flex:0 0 auto;display:flex;z-index:20;
@@ -1467,8 +1472,34 @@ function renderPlanTargets(){
   const el = $("#planTargets");
   el.innerHTML = planTargets.length
     ? `<div class="row" style="margin-top:12px">` + planTargets.map((t,i)=>
-        `<span class="target-chip">${t.qty}× ${esc(t.name)} <button data-pt="${i}" title="Remove">×</button></span>`).join("") + `</div>`
+        `<span class="target-chip"><button class="tgt-main" data-ptswap="${i}" title="Wrong item? Tap to fix">${thumb(t.name,"thumb-xs")}${t.qty}× ${esc(t.name)}</button><button class="tgt-x" data-pt="${i}" title="Remove">×</button></span>`).join("") + `</div>`
     : "";
+}
+// Tap-to-fix: reassign a planner target to the correct item (keeps quantity).
+function startPlanSwap(i, chip){
+  if(!chip || chip.querySelector(".swapin")) return;
+  const t = planTargets[i]; if(!t) return;
+  chip.innerHTML = `<input class="swapin" list="allItems" value="${esc(t.name)}" placeholder="Correct item…" autocomplete="off"><button class="swapok" type="button" aria-label="Confirm">✓</button>`;
+  const input = chip.querySelector(".swapin"); input.focus(); input.select();
+  const done = ()=> renamePlanTarget(i, input.value);
+  chip.querySelector(".swapok").addEventListener("click", done);
+  input.addEventListener("keydown", ev=>{
+    if(ev.key==="Enter"){ ev.preventDefault(); done(); }
+    else if(ev.key==="Escape"){ renderPlanner(); }
+  });
+}
+function renamePlanTarget(i, rawNew){
+  const typed = clean(rawNew);
+  if(!typed){ renderPlanner(); return; }
+  const target = findInData(typed) || (canonicalName(typed) ? findInData(canonicalName(typed)) : null);
+  if(!target){ toast(`"${typed}" isn't a known item`); return; }
+  const nm = target.product;
+  const cur = planTargets[i]; if(!cur){ renderPlanner(); return; }
+  if(nm.toLowerCase()===String(cur.name).toLowerCase()){ renderPlanner(); return; }
+  const dup = planTargets.findIndex((t,j)=>j!==i && t.name.toLowerCase()===nm.toLowerCase());
+  if(dup>=0){ planTargets[dup].qty += cur.qty; planTargets.splice(i,1); }
+  else { cur.name = nm; }
+  savePlan(); renderPlanner(); toast(`Fixed → ${nm}`);
 }
 function loadPlan(){
   try{ const a=JSON.parse(localStorage.getItem(PLAN_KEY));
@@ -1815,6 +1846,7 @@ $("#planAdd").addEventListener("click", ()=>{
   $("#planItem").value=""; $("#planQty").value=1; renderPlanner();
 });
 $("#planTargets").addEventListener("click", e=>{
+  const sw=e.target.closest("[data-ptswap]"); if(sw){ startPlanSwap(+sw.dataset.ptswap, sw.closest(".target-chip")); return; }
   const b=e.target.closest("[data-pt]"); if(b){ planTargets.splice(+b.dataset.pt,1); renderPlanner(); }
 });
 $("#planFromList").addEventListener("click", ()=>{
