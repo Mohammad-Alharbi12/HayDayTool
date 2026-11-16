@@ -4,6 +4,26 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.0] - 2026-11-15
+
+### Changed
+- **Goods list now sourced from the Hay Day Wiki Goods List.** The Browse and
+  Profit tabs are built from a bundled dataset of 418 goods scraped from the
+  Fandom "Goods List" page (levels, prices, production times, XP, ingredients),
+  loaded instantly offline instead of fetched live from hayday.info. Profit/hr
+  and XP/hr are computed from each item's max sell price, direct ingredient
+  cost, and production time. Footer credit updated accordingly.
+- **Fruits now store in the silo.** Tree & bush goods (apples, cherries,
+  oranges, etc.) are grouped under "Trees & Bushes" and correctly count against
+  silo space rather than the barn.
+
+### Added
+- **Collapsible Browse list.** The Browse tab can group items under collapsible
+  building headers (Crops, Trees & Bushes, Animal Products first, then each
+  machine A–Z) with a per-group count. Tap a header to expand/collapse, use
+  "Collapse all" / "Expand all", or turn off "Group by building" for the flat
+  sorted view.
+
 ## [2.11.0] - 2026-11-15
 
 ### Added

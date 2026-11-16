@@ -148,6 +148,19 @@
   /* checklist / planner rows */
   .grp-title{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
     margin:14px 2px 7px;font-weight:800}
+  .btn-sm{background:#edf5e4;color:var(--leaf-d);border:1px solid #dbe8cc;border-radius:8px;
+    padding:5px 10px;font-size:13px;font-weight:700;cursor:pointer}
+  .btn-sm:active{background:#e2efd3}
+  .grp{margin-bottom:8px}
+  .grp-head{display:flex;align-items:center;gap:9px;width:100%;text-align:left;cursor:pointer;
+    background:#f4f8ef;border:1px solid #dbe8cc;border-radius:12px;padding:11px 13px;
+    font-size:15px;font-weight:800;color:var(--leaf-d)}
+  .grp-head .chev{display:inline-block;transition:transform .15s;font-size:12px;color:var(--muted)}
+  .grp-head.open .chev{transform:rotate(90deg)}
+  .grp-head .grp-name{flex:1 1 auto}
+  .grp-head .grp-count{background:#fff;border:1px solid #dbe8cc;border-radius:20px;
+    padding:1px 9px;font-size:12px;font-weight:700;color:var(--muted)}
+  .grp-body{margin-top:7px}
   .li{display:flex;align-items:center;gap:10px;padding:10px 11px;border:1px solid var(--line);
     border-radius:13px;margin-bottom:7px;background:#fff}
   .li.done{background:#f4f8ef;border-color:#dbe8cc}
@@ -305,6 +318,12 @@
           <option value="xp|-1">Sort: XP (high→low)</option>
           <option value="product|1">Sort: Name (A–Z)</option>
         </select>
+      </div>
+      <div class="row" style="margin-top:8px;align-items:center;justify-content:space-between">
+        <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer">
+          <input type="checkbox" id="groupBuildings" checked style="width:16px;height:16px"> Group by building
+        </label>
+        <button class="btn-sm" id="toggleAllGroups" type="button">Collapse all</button>
       </div>
     </div>
     <div class="card">
@@ -464,7 +483,7 @@
   </section>
 
   <div class="foot">
-    Data from <a href="https://hayday.info" target="_blank" rel="noopener">hayday.info</a> · not affiliated with Supercell.<br>HayDay is a trademark of Supercell Oy.
+    Data from the <a href="https://hayday.fandom.com/wiki/Goods_List" target="_blank" rel="noopener">Hay Day Wiki Goods List</a> · not affiliated with Supercell.<br>HayDay is a trademark of Supercell Oy.
     <div class="flinks"><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Use</a> · <a href="https://github.com/biblestudytn26/HayDayTool" target="_blank" rel="noopener">GitHub</a></div>
     <div class="cpy">© 2026 HayDay Tool</div>
   </div>
@@ -539,6 +558,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="data/goods.js"></script>
 <script src="data/recipes.js"></script>
 <script>
 (function(){
@@ -586,7 +606,7 @@ let planTargets = loadPlan();    // [{name, qty}] — persisted across reloads
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const clean = v => typeof v === "string" ? v.replace(ZW, "").trim() : v;
-const storageOf = m => String(m||"").toLowerCase() === "crops" ? "silo" : "barn";
+const storageOf = m => CROP_MACHINES.includes(String(m||"").toLowerCase()) ? "silo" : "barn";
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 /* ----------------------------- data loading ------------------------------- */
@@ -623,15 +643,16 @@ async function fetchLive(){
 }
 
 async function loadData({ force=false } = {}){
-  const cached = readCache();
-  if(cached && !force){
-    DATA = cached.data;
+  // Primary source: goods bundled from the Hay Day Wiki Goods List (data/goods.js).
+  const bundled = (window.HAYDAY_GOODS && Array.isArray(window.HAYDAY_GOODS.items)) ? window.HAYDAY_GOODS.items : null;
+  if(bundled && bundled.length){
+    DATA = normalize(bundled);
     onData();
-    setStatus(`<b>${DATA.length}</b> items · cached ${ago(cached.at)}`, false);
-    // refresh quietly in the background
-    refreshQuiet();
+    setStatus(`<b>${DATA.length}</b> goods · Hay Day Wiki`, false);
     return;
   }
+  // Fallback: live fetch (only if the bundle failed to load).
+  const cached = readCache();
   setStatus(`<span class="spinner"></span> Loading data…`, false);
   try{
     const raw = await fetchLive();
@@ -715,6 +736,7 @@ function fillDatalist(){
 }
 
 /* ----------------------------- BROWSE ------------------------------------- */
+const collapsedGroups = new Set();
 const profNum = p => p==null ? "—" : Math.round(p).toLocaleString();
 const profCls = p => (p!=null && p<0) ? "prof-neg" : "prof-pos";
 function itemRow(i, meta){
@@ -749,9 +771,42 @@ function renderBrowse(){
   });
 
   $("#browseEmpty").classList.toggle("hide", rows.length>0);
-  $("#browseBody").innerHTML = rows.map(i=>
-    itemRow(i, `<span class="chip">${esc(i.machine)}</span> · Lv ${i.level??"—"} · ${fmtTime(i.time_min)}`)
-  ).join("");
+
+  const meta = i => `Lv ${i.level??"—"} · ${fmtTime(i.time_min)}`;
+  const grouping = $("#groupBuildings").checked;
+
+  if(!grouping){
+    $("#browseBody").innerHTML = rows.map(i=>
+      itemRow(i, `<span class="chip">${esc(i.machine)}</span> · Lv ${i.level??"—"} · ${fmtTime(i.time_min)}`)
+    ).join("");
+    return;
+  }
+
+  // Group by building/machine, preserving the chosen sort order within each group.
+  const groups = {};
+  for(const i of rows){ (groups[i.machine] = groups[i.machine] || []).push(i); }
+  const PRIORITY = ["Crops", "Trees & Bushes", "Animal Products"];
+  const names = Object.keys(groups).sort((a,b)=>{
+    const pa=PRIORITY.indexOf(a), pb=PRIORITY.indexOf(b);
+    if(pa>=0||pb>=0) return (pa<0?99:pa)-(pb<0?99:pb);
+    return a.localeCompare(b);
+  });
+
+  $("#browseBody").innerHTML = names.map(m=>{
+    const open = !collapsedGroups.has(m);
+    return `<div class="grp">
+      <button class="grp-head ${open?"open":""}" data-grp="${esc(m)}">
+        <span class="chev">▸</span>
+        <span class="grp-name">${esc(m)}</span>
+        <span class="grp-count">${groups[m].length}</span>
+      </button>
+      <div class="grp-body ${open?"":"hide"}">${groups[m].map(i=>itemRow(i, meta(i))).join("")}</div>
+    </div>`;
+  }).join("");
+
+  // Keep the expand/collapse-all button label in sync.
+  const allCollapsed = names.length>0 && names.every(m=>collapsedGroups.has(m));
+  $("#toggleAllGroups").textContent = allCollapsed ? "Expand all" : "Collapse all";
 }
 
 /* ----------------------------- PROFIT ------------------------------------- */
@@ -1534,9 +1589,24 @@ attachAC("#svItem", "#svItemMenu", ()=>$("#svHave").click());
 // tabs
 $("#tabs").addEventListener("click", e=>{ const b=e.target.closest("button[data-tab]"); if(b) switchTab(b.dataset.tab); });
 // browse controls
-["#q","#machineFilter","#quick","#sort"].forEach(s=>{
+["#q","#machineFilter","#quick","#sort","#groupBuildings"].forEach(s=>{
   $(s).addEventListener("input", renderBrowse);
   $(s).addEventListener("change", renderBrowse);
+});
+// collapse/expand a single building group
+$("#browseBody").addEventListener("click", e=>{
+  const head = e.target.closest(".grp-head"); if(!head) return;
+  const m = head.dataset.grp;
+  if(collapsedGroups.has(m)) collapsedGroups.delete(m); else collapsedGroups.add(m);
+  renderBrowse();
+});
+// collapse all / expand all
+$("#toggleAllGroups").addEventListener("click", ()=>{
+  const names = [...new Set(DATA.map(i=>i.machine))];
+  const allCollapsed = names.length>0 && names.every(m=>collapsedGroups.has(m));
+  if(allCollapsed) collapsedGroups.clear();
+  else names.forEach(m=>collapsedGroups.add(m));
+  renderBrowse();
 });
 // profit controls
 ["#pLimit","#pMin","#pMax","#pMachine"].forEach(s=>$(s).addEventListener("input", renderProfit));
