@@ -1250,7 +1250,8 @@ async function readShotWithAI(){
   const shot=SHOTS[svIndex]; if(!shot) return;
   setSvStatus("Reading…","busy"); $("#svRead").disabled=true;
   try{
-    const blob=await (await fetch(shot.url)).blob();
+    let blob=await (await fetch(shot.url)).blob();
+    try{ blob=await downscaleImage(blob,1400,.82); }catch(e){}
     const b64=await blobToB64(blob);
     const items = await callVisionViaProxy(b64, blob.type||"image/jpeg", pw);
     const parsed = items.map(x=>{
@@ -1337,7 +1338,8 @@ async function batchReadAll(){
   for(let i=0;i<SHOTS.length;i++){
     setInvAiStatus(`Reading ${i+1} of ${SHOTS.length}…`,"busy");
     try{
-      const blob=await (await fetch(SHOTS[i].url)).blob();
+      let blob=await (await fetch(SHOTS[i].url)).blob();
+      try{ blob=await downscaleImage(blob,1400,.82); }catch(e){}
       const b64=await blobToB64(blob);
       const items=await callVisionViaProxy(b64, blob.type||"image/jpeg", pw);
       for(const x of items){
