@@ -177,13 +177,14 @@
   .li .thumbbtn{border:0;background:transparent;padding:0;line-height:0;flex:0 0 auto;cursor:pointer}
   .li .swap{border:0;background:transparent;color:#9fb389;font-size:15px;line-height:1;padding:4px 6px;border-radius:9px;flex:0 0 auto;cursor:pointer}
   .li .swap:active{background:#eef4e6}
-  .swapwrap{flex:1;min-width:0;display:flex;gap:6px;align-items:center}
+  .swapwrap{flex:1;min-width:0;display:flex;gap:6px;align-items:center;position:relative}
+  .swap-menu{right:auto;min-width:210px;max-width:80vw}
   .swapwrap .swapin{flex:1;min-width:0;font-size:15px;font-weight:650;padding:6px 8px;border:1.5px solid var(--leaf);border-radius:9px;background:#fff}
   .swapwrap .swapok{flex:0 0 auto;border:0;background:var(--leaf);color:#fff;font-size:15px;font-weight:800;padding:6px 11px;border-radius:9px;cursor:pointer}
   .li .x:active{background:#fbece9;color:var(--danger)}
 
   .target-chip{display:inline-flex;align-items:center;gap:6px;background:#edf5e4;color:var(--leaf-d);
-    border:1px solid #d7e7c6;border-radius:999px;padding:6px 8px 6px 13px;font-size:13px;font-weight:650}
+    border:1px solid #d7e7c6;border-radius:999px;padding:6px 8px 6px 13px;font-size:13px;font-weight:650;position:relative}
   .target-chip button{border:0;background:#cfe0ba;color:var(--leaf-d);width:22px;height:22px;border-radius:50%;
     font-size:15px;line-height:1;padding:0}
   .target-chip .tgt-main{background:transparent;width:auto;height:auto;border-radius:0;padding:0;
@@ -1046,10 +1047,7 @@ function startInvSwap(oldProduct, li){
   input.focus(); input.select();
   const done = ()=> renameInvItem(oldProduct, input.value);
   wrap.querySelector(".swapok").addEventListener("click", done);
-  input.addEventListener("keydown", ev=>{
-    if(ev.key==="Enter"){ ev.preventDefault(); done(); }
-    else if(ev.key==="Escape"){ renderInv(); }
-  });
+  attachSwapAC(input, done, ()=>renderInv());
 }
 function renameInvItem(oldProduct, rawNew){
   const typed = clean(rawNew);
@@ -1483,10 +1481,7 @@ function startPlanSwap(i, chip){
   const input = chip.querySelector(".swapin"); input.focus(); input.select();
   const done = ()=> renamePlanTarget(i, input.value);
   chip.querySelector(".swapok").addEventListener("click", done);
-  input.addEventListener("keydown", ev=>{
-    if(ev.key==="Enter"){ ev.preventDefault(); done(); }
-    else if(ev.key==="Escape"){ renderPlanner(); }
-  });
+  attachSwapAC(input, done, ()=>renderPlanner());
 }
 function renamePlanTarget(i, rawNew){
   const typed = clean(rawNew);
@@ -1684,6 +1679,42 @@ function attachAC(inputSel, menuSel, onEnter){
     const it = e.target.closest(".ac-item");
     if(it){ e.preventDefault(); choose(+it.dataset.i); }
   });
+}
+// Live suggestion dropdown for a dynamically-created swap input.
+// Builds its own menu inside the input's (positioned) parent.
+function attachSwapAC(input, onChoose, onCancel){
+  const host = input.parentElement; if(!host) return;
+  const menu = document.createElement("div");
+  menu.className = "ac-menu swap-menu hide";
+  host.appendChild(menu);
+  let items=[], active=-1;
+  const close = ()=>{ menu.classList.add("hide"); menu.innerHTML=""; items=[]; active=-1; };
+  const machineOf = n => NAME_MACHINE[n.toLowerCase()] || "";
+  const hl = (name,q)=>{ const i=name.toLowerCase().indexOf(q.toLowerCase());
+    if(i<0||!q) return esc(name);
+    return esc(name.slice(0,i))+"<b>"+esc(name.slice(i,i+q.length))+"</b>"+esc(name.slice(i+q.length)); };
+  function build(q){ const ql=q.toLowerCase(), starts=[], incl=[];
+    for(const n of ITEM_NAMES){ const idx=n.toLowerCase().indexOf(ql); if(idx===0) starts.push(n); else if(idx>0) incl.push(n); }
+    items = starts.concat(incl).slice(0,8); }
+  function paint(){ menu.innerHTML = items.map((n,i)=>
+    `<div class="ac-item${i===active?' active':''}" data-i="${i}"><span>${hl(n,input.value.trim())}</span><span class="ac-mac">${esc(machineOf(n))}</span></div>`).join(""); }
+  function show(){ const q=input.value.trim();
+    if(q.length<1||!ITEM_NAMES.length){ close(); return; }
+    build(q); if(!items.length){ close(); return; }
+    active=-1; paint(); menu.classList.remove("hide"); }
+  input.addEventListener("input", show);
+  input.addEventListener("keydown", e=>{
+    const open = !menu.classList.contains("hide");
+    if(e.key==="ArrowDown" && open){ e.preventDefault(); active=Math.min(active+1, items.length-1); paint(); }
+    else if(e.key==="ArrowUp" && open){ e.preventDefault(); active=Math.max(active-1, 0); paint(); }
+    else if(e.key==="Enter"){ e.preventDefault(); if(open && active>=0){ input.value=items[active]; } close(); onChoose(); }
+    else if(e.key==="Escape"){ close(); if(onCancel) onCancel(); }
+  });
+  menu.addEventListener("mousedown", e=>{   // fires before blur so the tap isn't lost
+    const it = e.target.closest(".ac-item");
+    if(it){ e.preventDefault(); input.value = items[+it.dataset.i]; close(); onChoose(); }
+  });
+  show();   // the field is pre-filled & selected, so show matches right away
 }
 attachAC("#addItem", "#addItemMenu", ()=>$("#addBtn").click());
 attachAC("#planItem", "#planItemMenu", ()=>$("#planAdd").click());

@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [2.16.0] - 2026-11-16
+
+### Added
+- **Suggestions while fixing an item.** The tap-to-fix editor (inventory and
+  planner) now shows a live autocomplete dropdown as you type, so you can pick
+  the right good instead of typing it exactly.
+
+### Changed
+- **Reader hint for look-alike doners.** The AI is now told how to tell the
+  spicy bean doner, lamb doner wrap, and tower doner supreme apart by filling.
+
 ## [2.15.0] - 2026-11-16
 
 ### Added
