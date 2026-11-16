@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2026-11-15
+
+### Changed
+- **Screenshot reading now auto-adds to inventory.** Reading a screenshot adds
+  every matched item straight to your inventory — no "Add selected" step and no
+  Have/Need toggle (the whole screen is inventory now). Items it couldn't match
+  wait in a short "review" list with an Add button.
+- **Editable inventory quantities.** Type a count directly on any inventory row
+  (0 removes it), in addition to the +/- steppers — handy for fixing counts the
+  AI read as 1.
+
 ## [2.7.0] - 2026-11-15
 
 ### Added

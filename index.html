@@ -256,12 +256,16 @@
     font-size:18px;line-height:1;cursor:pointer;padding:0}
   .stepper button:first-child{border-radius:9px 0 0 9px}
   .stepper button:last-child{border-radius:0 9px 9px 0}
-  .stepper .q{min-width:42px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums;
-    border-top:1px solid var(--line);border-bottom:1px solid var(--line);height:30px;line-height:30px}
+  .stepper input.q{width:56px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums;
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-left:0;border-right:0;
+    height:30px;padding:0;background:#fff;color:var(--ink);border-radius:0;-moz-appearance:textfield}
+  .stepper input.q::-webkit-outer-spin-button,.stepper input.q::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   .have-chip{display:inline-block;background:#e6f0da;color:var(--leaf-d);border-radius:6px;
     padding:1px 6px;font-size:10.5px;font-weight:700;margin-left:4px;vertical-align:middle}
   .nomatch{display:inline-block;background:#f6e2d6;color:#b4542a;border-radius:6px;
     padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;vertical-align:middle}
+  .added-note{background:#eef5e6;border:1px solid var(--line);border-radius:12px;padding:10px 12px;
+    font-size:13.5px;color:var(--leaf-d);font-weight:600;line-height:1.45}
   .spinner{width:14px;height:14px;border:2.5px solid #cfe3bb;border-top-color:var(--leaf);
     border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:-2px}
   @keyframes spin{to{transform:rotate(360deg)}}
@@ -512,8 +516,7 @@
         <div class="ac-menu hide" id="svItemMenu"></div>
       </div>
       <label class="fld">Qty<input type="number" id="svQty" value="1" min="1"></label>
-      <button class="btn sm primary" id="svHave">+ Have</button>
-      <button class="btn sm" id="svNeed">+ Need</button>
+      <button class="btn sm primary" id="svHave">+ Add</button>
     </div>
   </div>
 </div>
@@ -955,7 +958,7 @@ function renderInv(){
       html += `<div class="li">
         <div class="stepper" data-inv="${id}">
           <button data-step="-1" aria-label="Less">−</button>
-          <span class="q">${it.qty.toLocaleString()}</span>
+          <input class="q" type="number" min="0" value="${it.qty}" data-invqty="${id}" aria-label="Quantity">
           <button data-step="1" aria-label="More">+</button>
         </div>
         <span class="nm">${esc(it.product)}</span>
@@ -1052,7 +1055,7 @@ function openShot(i){
   svIndex=Math.max(0,Math.min(i,SHOTS.length-1));
   $("#svImg").src=SHOTS[svIndex].url;
   $("#svCount").textContent=`${svIndex+1} / ${SHOTS.length}`;
-  detected=[]; if(typeof renderDetected==="function") renderDetected(); setSvStatus("");
+  clearDetected(); setSvStatus("");
   $("#shotView").classList.add("open");
 }
 function closeShot(){ $("#shotView").classList.remove("open"); }
@@ -1064,7 +1067,7 @@ function stepShot(d){ if(SHOTS.length) openShot((svIndex+d+SHOTS.length)%SHOTS.l
 const PROXY_URL = "https://hayday-ai-proxy-production.up.railway.app";
 const AI_PW_K = "haydaytool.ai.pw";
 const getPw = () => { try{ return localStorage.getItem(AI_PW_K)||""; }catch(e){ return ""; } };
-let detected = [];     // [{name,qty,type:'have'|'need',include,matched}]
+let detUnmatched = [];   // AI items we couldn't match to a canonical name (await manual add)
 
 /* Match an AI-returned name to the app's canonical item name so the math works */
 function normName(s){ return String(s||"").toLowerCase().replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim(); }
@@ -1147,64 +1150,40 @@ async function readShotWithAI(){
     const blob=await (await fetch(shot.url)).blob();
     const b64=await blobToB64(blob);
     const items = await callVisionViaProxy(b64, blob.type||"image/jpeg", pw);
-    detected = items.map(x=>{
+    const parsed = items.map(x=>{
       const rawName=String(x && x.name||"").trim();
       const canon=canonicalName(rawName);
-      return {
-        name: canon || rawName,
-        matched: !!canon,
-        qty:Math.max(1,Math.floor(+(x && x.qty)||1)),
-        type:(x && x.type==="have")?"have":"need",
-        include: !!canon        // unmatched items start unchecked (they'd break the math)
-      };
+      return { name: canon || rawName, matched: !!canon, qty:Math.max(1,Math.floor(+(x && x.qty)||1)) };
     }).filter(x=>x.name);
-    renderDetected();
-    const unmatched = detected.filter(x=>!x.matched).length;
-    setSvStatus(detected.length?`Found ${detected.length}${unmatched?` · ${unmatched} unmatched`:""}`:"Nothing found", detected.length?"":"err");
+    // Auto-add everything we could match straight into inventory
+    const matched = parsed.filter(x=>x.matched);
+    detUnmatched = parsed.filter(x=>!x.matched);
+    for(const x of matched) addToInv(x.name, x.qty, true);
+    renderInv(); updateInvCount();
+    renderAdded(matched.length);
+    setSvStatus(matched.length
+      ? `Added ${matched.length} to inventory${detUnmatched.length?` · ${detUnmatched.length} to review`:""}`
+      : (detUnmatched.length?"None matched — review below":"Nothing found"), matched.length?"":"err");
+    if(matched.length) toast(`Added ${matched.length} to inventory`);
   }catch(e){
     setSvStatus(String(e.message||e), "err");
   }finally{ $("#svRead").disabled=false; }
 }
-function renderDetected(){
+function clearDetected(){ detUnmatched=[]; const el=$("#svDetected"); if(el) el.innerHTML=""; }
+function renderAdded(addedCount){
   const el=$("#svDetected");
-  if(!detected.length){ el.innerHTML=""; return; }
-  el.innerHTML = `<div class="lbl" style="margin-top:10px">Detected — check, set Have/Need, then add</div>` +
-    detected.map((x,i)=>`<div class="det" data-i="${i}">
-      <input type="checkbox" data-detchk="${i}" ${x.include?"checked":""}>
-      <input type="number" class="det-q" min="1" value="${x.qty}" data-detqty="${i}" aria-label="Quantity">
-      <span class="det-n">${esc(x.name)}${x.matched?"":` <span class="nomatch" title="No matching Hay Day item found">no match</span>`}</span>
-      <span class="seg">
-        <button data-dettype="${i}" data-t="have" class="${x.type==="have"?"on":""}">Have</button>
-        <button data-dettype="${i}" data-t="need" class="${x.type==="need"?"on":""}">Need</button>
-      </span>
-    </div>`).join("") +
-    `<div class="row" style="margin-top:10px">
-      <button class="btn sm primary" id="detAdd">Add selected</button>
-      <button class="btn sm" id="detPlan">📋 Plan needs vs inventory</button>
-      <button class="btn sm ghost" id="detClear">Dismiss</button>
-    </div>`;
-}
-function detPlanFromOrder(){
-  const needs = detected.filter(x=>x.include && x.type==="need");
-  if(!needs.length){ toast("Tick some “Need” items first"); return; }
-  planTargets = needs.map(x=>({ name:x.name, qty:x.qty }));
-  detected=[]; renderDetected(); setSvStatus("");
-  closeShot();
-  const t=$("#planUseInv"); if(t) t.checked=true;
-  switchTab("planner");
-  toast("Planning these against your inventory");
-}
-function detAddSelected(){
-  let have=0, need=0, skip=0;
-  for(const x of detected){
-    if(!x.include) continue;
-    if(x.type==="have"){ addToInv(x.name, x.qty, true); have++; }
-    else { addToList(x.name, x.qty, true) ? need++ : skip++; }
+  let html="";
+  if(addedCount) html += `<div class="added-note">✓ Added ${addedCount} item${addedCount===1?"":"s"} to your inventory — adjust the counts on the list below the picture anytime.</div>`;
+  if(detUnmatched.length){
+    html += `<div class="lbl" style="margin-top:12px">Couldn't match these — tap Add to keep as-is</div>`;
+    html += detUnmatched.map((x,i)=>`<div class="det" data-u="${i}">
+        <input type="number" class="det-q" min="1" value="${x.qty}" data-uqty="${i}" aria-label="Quantity">
+        <span class="det-n">${esc(x.name)}</span>
+        <button class="btn sm" data-uadd="${i}">Add</button>
+      </div>`).join("");
   }
-  renderInv(); updateInvCount(); renderList(); updateListCount();
-  detected=[]; renderDetected(); setSvStatus("");
-  const parts=[]; if(have)parts.push(`${have} to inventory`); if(need)parts.push(`${need} to list`);
-  toast((parts.join(" · ")||"Nothing added")+(skip?` · ${skip} unknown skipped`:""));
+  if(html) html += `<div class="row" style="margin-top:12px"><button class="btn sm ghost" id="detDone">Done</button></div>`;
+  el.innerHTML = html;
 }
 
 /* API-key sheet */
@@ -1391,8 +1370,8 @@ const HELP = {
     what:"Breaks a batch down to the raw ingredients you need — and subtracts what's already in your inventory, so you see only what's still missing. Tell it you want 10 Cakes and it lists every crop and raw good to gather.",
     how:["Type what you want to make and how many, then tap + Add.","Keep “Subtract what I already have” on to net it against your inventory; toggle it off for the full recipe.","Add as many targets as you like — the totals combine.","Tap “Add … to My List” to turn the breakdown into your checklist. You can also send an order screenshot straight here from the Inventory tab."] },
   inventory: { title:"📦 Inventory",
-    what:"Track what you actually have, and attach screenshots of your barn, silo, orders or the newspaper to work from. It's saved on this device.",
-    how:["Tap ＋ Add to attach screenshots (barn, silo, truck/boat orders, the paper).","Tap a screenshot to open it full-size and log items right from it — “+ Have” adds to this inventory, “+ Need” adds to your List.","Or add items directly below with the amount you have, and use the +/− steppers to adjust.","Tap “Use as List's Full now” to feed these totals into your barn/silo space math on the List tab."] },
+    what:"Track what you actually have. Snap your barn or silo and the AI reads it straight into your inventory. It's saved on this device.",
+    how:["Tap ＋ Add to attach a screenshot of your barn or silo.","Tap the screenshot, then “Read with AI” — matched items are added to your inventory automatically.","Fix any counts by typing in the number box on each row (or use +/−).","Add items by hand below too. Tap “Use as List's Full now” to feed these totals into your barn/silo space math."] },
   list: { title:"✅ Needed Goods List",
     what:"Your personal checklist of what to collect, with live barn and silo space tracking. It's saved right on this device — no account needed.",
     how:["Add a good and the amount you need.","Set your Barn and Silo size, plus how full each is right now — it shows the space left and warns if the list won't fit.","Check goods off as you collect them.","Tap “📋 Copy list” to share it with a friend or your neighborhood."] }
@@ -1533,6 +1512,15 @@ $("#invItems").addEventListener("click", e=>{
   const del=e.target.closest("[data-invdel]");
   if(del){ inv.items=inv.items.filter(i=>i.product!==del.dataset.invdel); saveInv(); renderInv(); updateInvCount(); }
 });
+// Directly type a quantity on an inventory row
+$("#invItems").addEventListener("change", e=>{
+  const q=e.target.closest("[data-invqty]");
+  if(!q) return;
+  const it=inv.items.find(i=>i.product===q.dataset.invqty); if(!it) return;
+  const v=Math.max(0,Math.floor(+q.value||0));
+  if(v===0){ inv.items=inv.items.filter(x=>x!==it); } else { it.qty=v; }
+  saveInv(); renderInv(); updateInvCount();
+});
 $("#invCopy").addEventListener("click", copyInv);
 $("#invClear").addEventListener("click", ()=>{ if(confirm("Clear your whole inventory?")){ inv.items=[]; saveInv(); renderInv(); updateInvCount(); } });
 $("#invToFill").addEventListener("click", ()=>{
@@ -1552,10 +1540,6 @@ $("#svClose").addEventListener("click", closeShot);
 $("#svPrev").addEventListener("click", ()=>stepShot(-1));
 $("#svNext").addEventListener("click", ()=>stepShot(1));
 $("#svHave").addEventListener("click", ()=>{ addToInv($("#svItem").value, +$("#svQty").value||1); $("#svItem").value=""; $("#svQty").value=1; });
-$("#svNeed").addEventListener("click", ()=>{
-  const n=clean($("#svItem").value); if(!n){ toast("Type an item"); return; }
-  addToList(n, +$("#svQty").value||1); $("#svItem").value=""; $("#svQty").value=1;
-});
 
 // AI screenshot reading
 $("#svRead").addEventListener("click", readShotWithAI);
@@ -1573,17 +1557,18 @@ $("#aiKeyClear").addEventListener("click", ()=>{
   $("#aiKeyInput").value=""; refreshAIHint(); toast("Turned off");
 });
 $("#svDetected").addEventListener("click", e=>{
-  const seg=e.target.closest("[data-dettype]");
-  if(seg){ const i=+seg.dataset.dettype; if(detected[i]){ detected[i].type=seg.dataset.t; renderDetected(); } return; }
-  if(e.target.closest("#detAdd")){ detAddSelected(); return; }
-  if(e.target.closest("#detPlan")){ detPlanFromOrder(); return; }
-  if(e.target.closest("#detClear")){ detected=[]; renderDetected(); setSvStatus(""); return; }
+  const add=e.target.closest("[data-uadd]");
+  if(add){
+    const i=+add.dataset.uadd, it=detUnmatched[i];
+    if(it){ addToInv(it.name, it.qty); detUnmatched.splice(i,1); renderAdded(0);
+      if(!detUnmatched.length) setSvStatus("All set"); }
+    return;
+  }
+  if(e.target.closest("#detDone")){ clearDetected(); setSvStatus(""); return; }
 });
 $("#svDetected").addEventListener("change", e=>{
-  const chk=e.target.closest("[data-detchk]");
-  if(chk){ const i=+chk.dataset.detchk; if(detected[i]) detected[i].include=chk.checked; return; }
-  const q=e.target.closest("[data-detqty]");
-  if(q){ const i=+q.dataset.detqty; if(detected[i]) detected[i].qty=Math.max(1,Math.floor(+q.value||1)); }
+  const q=e.target.closest("[data-uqty]");
+  if(q){ const i=+q.dataset.uqty; if(detUnmatched[i]) detUnmatched[i].qty=Math.max(1,Math.floor(+q.value||1)); }
 });
 
 $("#refreshBtn").addEventListener("click", ()=>loadData({force:true}));
