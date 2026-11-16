@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [2.13.1] - 2026-11-16
+
+### Fixed
+- **Doner mismatch.** When the AI read an order and returned an approximate
+  name like "Spicy doner wrap", the matcher could lock onto "Lamb doner wrap"
+  because they share the words "doner wrap". Item matching now weights the
+  leading word most, so the flavor the AI saw ("Spicy", "Lamb") decides the
+  match instead of a shared generic suffix.
+
 
 ## [2.13.0] - 2026-11-16
 

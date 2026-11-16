@@ -1183,14 +1183,24 @@ function lev(a,b){
   return prev[n];
 }
 function levSim(a,b){ const L=Math.max(a.length,b.length); return L ? 1-lev(a,b)/L : 0; }
+// How much of the query a candidate covers, with the leading word weighted most.
+// The AI tends to lead with the flavor it sees ("Spicy ...", "Lamb ..."), so a
+// shared first word should outweigh a shared generic suffix like "doner wrap".
+function posContain(qTok, nTok){
+  const ns = new Set(nTok);
+  let shared=0, total=0;
+  qTok.forEach((tk,i)=>{ const w = i===0 ? 2 : 1; total+=w; if(ns.has(tk)) shared+=w; });
+  return total ? shared/total : 0;
+}
 function canonicalName(name){
   const q=normName(name); if(!q) return null;
   if(NAME_INDEX[q]) return NAME_INDEX[q];               // exact (normalized)
   const qns=q.replace(/ /g,"");
   if(NAME_INDEX_NS[qns]) return NAME_INDEX_NS[qns];     // spacing-insensitive exact
+  const qTok=q.split(" ").filter(Boolean);
   let best=null, score=0;
   for(const n of ITEM_NAMES){
-    const nn=normName(n), nns=nn.replace(/ /g,"");
+    const nn=normName(n), nns=nn.replace(/ /g,""), nTok=nn.split(" ").filter(Boolean);
     let s;
     if(nns===qns) s=1;
     else {
@@ -1198,7 +1208,9 @@ function canonicalName(name){
       let sub=0;
       if(nns.startsWith(qns)||qns.startsWith(nns)||nns.includes(qns)||qns.includes(nns))
         sub = Math.min(qns.length,nns.length)/Math.max(qns.length,nns.length);
-      s = Math.max(sub, levSim(qns,nns), tokenSim(q,nn));
+      // leading-word-weighted token coverage (only for multi-word names)
+      const pos = (qTok.length>1 && nTok.length>1) ? posContain(qTok, nTok) : 0;
+      s = Math.max(sub, levSim(qns,nns), tokenSim(q,nn), pos);
     }
     if(s>score){ score=s; best=n; }
   }
