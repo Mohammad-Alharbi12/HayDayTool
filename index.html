@@ -402,8 +402,7 @@
         <button class="btn primary" id="invAddBtn">+ Add</button>
       </div>
       <div class="row" style="margin-top:10px">
-        <button class="btn sm" id="invToFill" title="Copy these totals into your List's barn/silo “Full now”">Use as List's “Full now”</button>
-        <span style="flex:1"></span>
+        <span class="sub" style="flex:1;margin:0;align-self:center">Totals flow into your List's space math automatically.</span>
         <button class="btn sm" id="invCopy">📋 Copy</button>
         <button class="btn sm ghost" id="invClear">Clear</button>
       </div>
@@ -443,6 +442,7 @@
           <label class="fld">Full now<input type="number" id="fillSilo" min="0" placeholder="0"></label>
         </div>
       </div>
+      <label class="invtoggle"><input type="checkbox" id="useInvFill"> “Full now” comes from my inventory</label>
       <div class="row" style="margin-top:10px">
         <button class="btn sm" id="saveCap">Save sizes</button>
         <span style="flex:1"></span>
@@ -789,10 +789,11 @@ function loadList(){
     const o = JSON.parse(localStorage.getItem(LIST_KEY));
     if(o && o.capacity && Array.isArray(o.items)){
       if(!o.filled) o.filled = { barn:0, silo:0 };   // migrate older saves
+      if(o.useInvFill === undefined) o.useInvFill = true;
       return o;
     }
   }catch(e){}
-  return { capacity:{ barn:1000, silo:1000 }, filled:{ barn:0, silo:0 }, items:[] };
+  return { capacity:{ barn:1000, silo:1000 }, filled:{ barn:0, silo:0 }, useInvFill:true, items:[] };
 }
 function saveList(){ try{ localStorage.setItem(LIST_KEY, JSON.stringify(list)); }catch(e){} }
 
@@ -850,12 +851,20 @@ function renderSummary(){
        <span><b>${s.needTotal.toLocaleString()}</b> still to get</span>
      </div>`;
 }
+function syncInvToFill(){
+  if(!list.useInvFill) return;
+  const u=invUsed(); list.filled.barn=u.barn; list.filled.silo=u.silo; saveList();
+}
 function renderList(){
+  syncInvToFill();
   renderSummary();
   $("#capBarn").value = list.capacity.barn;
   $("#capSilo").value = list.capacity.silo;
+  $("#useInvFill").checked = !!list.useInvFill;
   $("#fillBarn").value = list.filled.barn;
   $("#fillSilo").value = list.filled.silo;
+  $("#fillBarn").disabled = !!list.useInvFill;
+  $("#fillSilo").disabled = !!list.useInvFill;
   const empty = list.items.length===0;
   $("#listEmpty").classList.toggle("hide", !empty);
   if(empty){ $("#listItems").innerHTML=""; return; }
@@ -948,6 +957,7 @@ function renderInvSummary(){
 }
 function renderInv(){
   renderInvSummary();
+  syncInvToFill();
   const empty=inv.items.length===0;
   $("#invEmpty").classList.toggle("hide",!empty);
   if(empty){ $("#invItems").innerHTML=""; return; }
@@ -1507,21 +1517,19 @@ $("#listItems").addEventListener("click", e=>{
   const del=e.target.closest("[data-del]");
   if(del){ list.items=list.items.filter(i=>i.product!==del.dataset.del); saveList(); renderList(); updateListCount(); }
 });
-$("#saveCap").addEventListener("click", ()=>{
+function readCaps(){
   list.capacity.barn=Math.max(0,Math.floor(+$("#capBarn").value||0));
   list.capacity.silo=Math.max(0,Math.floor(+$("#capSilo").value||0));
-  list.filled.barn=Math.max(0,Math.floor(+$("#fillBarn").value||0));
-  list.filled.silo=Math.max(0,Math.floor(+$("#fillSilo").value||0));
-  saveList(); renderSummary(); toast("Saved");
-});
+  if(list.useInvFill){ const u=invUsed(); list.filled.barn=u.barn; list.filled.silo=u.silo; }
+  else{
+    list.filled.barn=Math.max(0,Math.floor(+$("#fillBarn").value||0));
+    list.filled.silo=Math.max(0,Math.floor(+$("#fillSilo").value||0));
+  }
+  saveList();
+}
+$("#saveCap").addEventListener("click", ()=>{ readCaps(); renderSummary(); toast("Saved"); });
 // live-update the bars as you type sizes/fill, without needing Save
-["#capBarn","#capSilo","#fillBarn","#fillSilo"].forEach(s=>$(s).addEventListener("input", ()=>{
-  list.capacity.barn=Math.max(0,Math.floor(+$("#capBarn").value||0));
-  list.capacity.silo=Math.max(0,Math.floor(+$("#capSilo").value||0));
-  list.filled.barn=Math.max(0,Math.floor(+$("#fillBarn").value||0));
-  list.filled.silo=Math.max(0,Math.floor(+$("#fillSilo").value||0));
-  saveList(); renderSummary();
-}));
+["#capBarn","#capSilo","#fillBarn","#fillSilo"].forEach(s=>$(s).addEventListener("input", ()=>{ readCaps(); renderSummary(); }));
 $("#copyBtn").addEventListener("click", copyList);
 $("#clearBtn").addEventListener("click", ()=>{
   if(!list.items.length) return;
@@ -1554,10 +1562,9 @@ $("#invItems").addEventListener("change", e=>{
 });
 $("#invCopy").addEventListener("click", copyInv);
 $("#invClear").addEventListener("click", ()=>{ if(confirm("Clear your whole inventory?")){ inv.items=[]; saveInv(); renderInv(); updateInvCount(); } });
-$("#invToFill").addEventListener("click", ()=>{
-  const u=invUsed(); list.filled.barn=u.barn; list.filled.silo=u.silo; saveList();
-  $("#fillBarn").value=u.barn; $("#fillSilo").value=u.silo;
-  toast("Set as your List's “Full now”");
+$("#useInvFill").addEventListener("change", ()=>{
+  list.useInvFill = $("#useInvFill").checked;
+  saveList(); renderList();
 });
 
 // Screenshots
