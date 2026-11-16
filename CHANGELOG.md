@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.13.0] - 2026-11-16
+
+### Added
+- **Item thumbnails everywhere.** The official Hay Day item icons (bundled from
+  the wiki, 418 images) now show on the Browse and Profit lists, the needed-goods
+  List, and the Inventory. Because the AI reads screenshots that show these same
+  icons, having the real thumbnail next to each matched item makes it easy to
+  confirm the AI matched the right good at a glance. Thumbnails lazy-load so the
+  Browse list stays fast.
+
 ## [2.12.0] - 2026-11-15
 
 ### Changed
