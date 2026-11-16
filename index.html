@@ -174,6 +174,12 @@
   .li.done .nm{text-decoration:line-through;color:var(--muted)}
   .li .st{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;flex:0 0 auto}
   .li .x{border:0;background:transparent;color:#b9c3ad;font-size:22px;line-height:1;padding:4px 8px;border-radius:9px;flex:0 0 auto}
+  .li .thumbbtn{border:0;background:transparent;padding:0;line-height:0;flex:0 0 auto;cursor:pointer}
+  .li .swap{border:0;background:transparent;color:#9fb389;font-size:15px;line-height:1;padding:4px 6px;border-radius:9px;flex:0 0 auto;cursor:pointer}
+  .li .swap:active{background:#eef4e6}
+  .swapwrap{flex:1;min-width:0;display:flex;gap:6px;align-items:center}
+  .swapwrap .swapin{flex:1;min-width:0;font-size:15px;font-weight:650;padding:6px 8px;border:1.5px solid var(--leaf);border-radius:9px;background:#fff}
+  .swapwrap .swapok{flex:0 0 auto;border:0;background:var(--leaf);color:#fff;font-size:15px;font-weight:800;padding:6px 11px;border-radius:9px;cursor:pointer}
   .li .x:active{background:#fbece9;color:var(--danger)}
 
   .target-chip{display:inline-flex;align-items:center;gap:6px;background:#edf5e4;color:var(--leaf-d);
@@ -1021,6 +1027,40 @@ function addToInv(name, qty, quiet){
     toast(`Have ${cur?cur.qty:n}× ${nm}`); }
   return true;
 }
+// Tap-to-fix: reassign an inventory row to the correct item (keeps the quantity).
+function startInvSwap(oldProduct, li){
+  if(!li || li.querySelector(".swapin")) return;
+  const nm = li.querySelector(".nm"); if(!nm) return;
+  const wrap = document.createElement("span");
+  wrap.className = "swapwrap";
+  wrap.innerHTML = `<input class="swapin" list="allItems" value="${esc(oldProduct)}" placeholder="Correct item…" autocomplete="off">
+    <button class="swapok" type="button" aria-label="Confirm">✓</button>`;
+  nm.replaceWith(wrap);
+  const input = wrap.querySelector(".swapin");
+  input.focus(); input.select();
+  const done = ()=> renameInvItem(oldProduct, input.value);
+  wrap.querySelector(".swapok").addEventListener("click", done);
+  input.addEventListener("keydown", ev=>{
+    if(ev.key==="Enter"){ ev.preventDefault(); done(); }
+    else if(ev.key==="Escape"){ renderInv(); }
+  });
+}
+function renameInvItem(oldProduct, rawNew){
+  const typed = clean(rawNew);
+  if(!typed){ renderInv(); return; }
+  const target = findInData(typed) || (canonicalName(typed) ? findInData(canonicalName(typed)) : null);
+  if(!target){ toast(`"${typed}" isn't a known item`); return; }
+  const nm = target.product;
+  if(nm.toLowerCase()===String(oldProduct).toLowerCase()){ renderInv(); return; }
+  const idx = inv.items.findIndex(x=>x.product===oldProduct);
+  if(idx<0){ renderInv(); return; }
+  const qty = inv.items[idx].qty;
+  const ex = inv.items.find(x=>x.product.toLowerCase()===nm.toLowerCase());
+  if(ex && ex!==inv.items[idx]){ ex.qty += qty; ex.machine = target.machine; inv.items.splice(idx,1); }
+  else { inv.items[idx].product = nm; inv.items[idx].machine = target.machine; }
+  saveInv(); renderInv(); updateInvCount(); syncInvToFill();
+  toast(`Fixed → ${nm}`);
+}
 function renderInvSummary(){
   const u=invUsed();
   const block=(name,key)=>{
@@ -1051,9 +1091,10 @@ function renderInv(){
           <input class="q" type="number" min="0" value="${it.qty}" data-invqty="${id}" aria-label="Quantity">
           <button data-step="1" aria-label="More">+</button>
         </div>
-        ${thumb(it.product,"thumb-sm")}
+        <button class="thumbbtn" data-invswap="${id}" title="Wrong item? Tap to fix">${thumb(it.product,"thumb-sm")}</button>
         <span class="nm">${esc(it.product)}</span>
         <span class="st">${store}</span>
+        <button class="swap" data-invswap="${id}" title="Fix item">✎</button>
         <button class="x" data-invdel="${id}" title="Remove">×</button>
       </div>`;
     }
@@ -1693,6 +1734,8 @@ $("#invItems").addEventListener("click", e=>{
       saveInv(); renderInv(); updateInvCount(); }
     return;
   }
+  const sw=e.target.closest("[data-invswap]");
+  if(sw){ startInvSwap(sw.dataset.invswap, sw.closest(".li")); return; }
   const del=e.target.closest("[data-invdel]");
   if(del){ inv.items=inv.items.filter(i=>i.product!==del.dataset.invdel); saveInv(); renderInv(); updateInvCount(); }
 });

@@ -3,6 +3,19 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [2.14.0] - 2026-11-16
+
+### Added
+- **Tap-to-fix on inventory items.** When the AI reads two near-identical
+  icons wrong (e.g. Spicy bean doner vs Lamb doner wrap), tap the item's
+  thumbnail or the ✎ button to reassign it to the correct good — the
+  quantity carries over and it merges if that good is already in your
+  inventory.
+
+### Changed
+- **Stronger AI model for screenshot reads.** Reads now use a more capable
+  vision model to better tell apart look-alike item icons.
+
 ## [2.13.1] - 2026-11-16
 
 ### Fixed
