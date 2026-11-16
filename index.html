@@ -378,13 +378,16 @@
   <section id="tab-inventory" class="hide">
     <div class="card">
       <h2>My inventory</h2>
-      <p class="sub">Snap your barn, silo, truck/boat orders or the newspaper, then read it with AI or log by hand. Saved in this browser.</p>
+      <p class="sub">Snap your barn and silo, then let AI read them straight into your inventory. Saved in this browser.</p>
       <div class="shots" id="shotStrip"></div>
       <input type="file" id="shotInput" accept="image/*" multiple hidden>
       <div class="row" style="margin-top:10px">
-        <button class="btn sm" id="aiSetupBtn">✨ Set up AI reading</button>
+        <button class="btn sm primary" id="invReadAll">✨ Read all with AI</button>
+        <button class="btn sm ghost" id="aiSetupBtn">Set up</button>
         <span class="sub" id="aiStateHint" style="flex:1;margin:0;align-self:center"></span>
       </div>
+      <div class="sv-status" id="invAiStatus" style="margin-top:6px"></div>
+      <div id="invReview"></div>
     </div>
 
     <div class="card">
@@ -1160,7 +1163,7 @@ async function readShotWithAI(){
     detUnmatched = parsed.filter(x=>!x.matched);
     for(const x of matched) addToInv(x.name, x.qty, true);
     renderInv(); updateInvCount();
-    renderAdded(matched.length);
+    renderUnmatched($("#svDetected"), matched.length);
     setSvStatus(matched.length
       ? `Added ${matched.length} to inventory${detUnmatched.length?` · ${detUnmatched.length} to review`:""}`
       : (detUnmatched.length?"None matched — review below":"Nothing found"), matched.length?"":"err");
@@ -1170,10 +1173,10 @@ async function readShotWithAI(){
   }finally{ $("#svRead").disabled=false; }
 }
 function clearDetected(){ detUnmatched=[]; const el=$("#svDetected"); if(el) el.innerHTML=""; }
-function renderAdded(addedCount){
-  const el=$("#svDetected");
+function renderUnmatched(host, addedCount){
+  if(!host) return;
   let html="";
-  if(addedCount) html += `<div class="added-note">✓ Added ${addedCount} item${addedCount===1?"":"s"} to your inventory — adjust the counts on the list below the picture anytime.</div>`;
+  if(addedCount) html += `<div class="added-note">✓ Added ${addedCount} item${addedCount===1?"":"s"} to your inventory — adjust the counts on the list anytime.</div>`;
   if(detUnmatched.length){
     html += `<div class="lbl" style="margin-top:12px">Couldn't match these — tap Add to keep as-is</div>`;
     html += detUnmatched.map((x,i)=>`<div class="det" data-u="${i}">
@@ -1182,8 +1185,36 @@ function renderAdded(addedCount){
         <button class="btn sm" data-uadd="${i}">Add</button>
       </div>`).join("");
   }
-  if(html) html += `<div class="row" style="margin-top:12px"><button class="btn sm ghost" id="detDone">Done</button></div>`;
-  el.innerHTML = html;
+  if(html) html += `<div class="row" style="margin-top:12px"><button class="btn sm ghost" data-done="1">Done</button></div>`;
+  host.innerHTML = html;
+}
+function setInvAiStatus(msg, kind){ const el=$("#invAiStatus"); if(el){ el.textContent=msg||""; el.className="sv-status"+(kind?" "+kind:""); } }
+async function batchReadAll(){
+  const pw=getPw();
+  if(!pw){ toast("Enter the access password first"); openAIKey(); return; }
+  if(!SHOTS.length){ toast("Add some screenshots first"); return; }
+  const btn=$("#invReadAll"); btn.disabled=true;
+  detUnmatched=[]; $("#invReview").innerHTML="";
+  let added=0, failed=0;
+  for(let i=0;i<SHOTS.length;i++){
+    setInvAiStatus(`Reading ${i+1} of ${SHOTS.length}…`,"busy");
+    try{
+      const blob=await (await fetch(SHOTS[i].url)).blob();
+      const b64=await blobToB64(blob);
+      const items=await callVisionViaProxy(b64, blob.type||"image/jpeg", pw);
+      for(const x of items){
+        const raw=String(x && x.name||"").trim(); if(!raw) continue;
+        const canon=canonicalName(raw);
+        const qty=Math.max(1,Math.floor(+(x && x.qty)||1));
+        if(canon){ addToInv(canon, qty, true); added++; }
+        else detUnmatched.push({ name:raw, qty });
+      }
+    }catch(e){ failed++; }
+  }
+  renderInv(); updateInvCount();
+  renderUnmatched($("#invReview"), added);
+  setInvAiStatus(`Added ${added} item${added===1?"":"s"} from ${SHOTS.length} screenshot${SHOTS.length===1?"":"s"}${detUnmatched.length?` · ${detUnmatched.length} to review`:""}${failed?` · ${failed} failed`:""}`, added?"":"err");
+  btn.disabled=false;
 }
 
 /* API-key sheet */
@@ -1371,7 +1402,7 @@ const HELP = {
     how:["Type what you want to make and how many, then tap + Add.","Keep “Subtract what I already have” on to net it against your inventory; toggle it off for the full recipe.","Add as many targets as you like — the totals combine.","Tap “Add … to My List” to turn the breakdown into your checklist. You can also send an order screenshot straight here from the Inventory tab."] },
   inventory: { title:"📦 Inventory",
     what:"Track what you actually have. Snap your barn or silo and the AI reads it straight into your inventory. It's saved on this device.",
-    how:["Tap ＋ Add to attach a screenshot of your barn or silo.","Tap the screenshot, then “Read with AI” — matched items are added to your inventory automatically.","Fix any counts by typing in the number box on each row (or use +/−).","Add items by hand below too. Tap “Use as List's Full now” to feed these totals into your barn/silo space math."] },
+    how:["Tap ＋ Add to attach screenshots of your barn and silo (add as many as you like).","Tap “Read all with AI” to read every screenshot into your inventory at once — or tap a single screenshot and use its “Read with AI”.","Fix any counts by typing in the number box on each row (or use +/−).","Add items by hand below too. Tap “Use as List's Full now” to feed these totals into your barn/silo space math."] },
   list: { title:"✅ Needed Goods List",
     what:"Your personal checklist of what to collect, with live barn and silo space tracking. It's saved right on this device — no account needed.",
     how:["Add a good and the amount you need.","Set your Barn and Silo size, plus how full each is right now — it shows the space left and warns if the list won't fit.","Check goods off as you collect them.","Tap “📋 Copy list” to share it with a friend or your neighborhood."] }
@@ -1556,20 +1587,25 @@ $("#aiKeyClear").addEventListener("click", ()=>{
   try{ localStorage.removeItem(AI_PW_K); }catch(e){}
   $("#aiKeyInput").value=""; refreshAIHint(); toast("Turned off");
 });
-$("#svDetected").addEventListener("click", e=>{
-  const add=e.target.closest("[data-uadd]");
-  if(add){
-    const i=+add.dataset.uadd, it=detUnmatched[i];
-    if(it){ addToInv(it.name, it.qty); detUnmatched.splice(i,1); renderAdded(0);
-      if(!detUnmatched.length) setSvStatus("All set"); }
-    return;
-  }
-  if(e.target.closest("#detDone")){ clearDetected(); setSvStatus(""); return; }
-});
-$("#svDetected").addEventListener("change", e=>{
-  const q=e.target.closest("[data-uqty]");
-  if(q){ const i=+q.dataset.uqty; if(detUnmatched[i]) detUnmatched[i].qty=Math.max(1,Math.floor(+q.value||1)); }
-});
+$("#invReadAll").addEventListener("click", batchReadAll);
+function bindUnmatched(host){
+  if(!host) return;
+  host.addEventListener("click", e=>{
+    const add=e.target.closest("[data-uadd]");
+    if(add){
+      const i=+add.dataset.uadd, it=detUnmatched[i];
+      if(it){ addToInv(it.name, it.qty); detUnmatched.splice(i,1); renderUnmatched(host, 0); }
+      return;
+    }
+    if(e.target.closest("[data-done]")){ detUnmatched=[]; host.innerHTML=""; if(host.id==="svDetected") setSvStatus(""); return; }
+  });
+  host.addEventListener("change", e=>{
+    const q=e.target.closest("[data-uqty]");
+    if(q){ const i=+q.dataset.uqty; if(detUnmatched[i]) detUnmatched[i].qty=Math.max(1,Math.floor(+q.value||1)); }
+  });
+}
+bindUnmatched($("#svDetected"));
+bindUnmatched($("#invReview"));
 
 $("#refreshBtn").addEventListener("click", ()=>loadData({force:true}));
 

@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2026-11-15
+
+### Added
+- **"Read all with AI" on the Inventory screen.** One button reads every attached
+  screenshot into your inventory, one image at a time, with live progress. The
+  per-image "Read with AI" still works too. Unmatched items collect into a single
+  review list.
+
 ## [2.8.0] - 2026-11-15
 
 ### Changed
