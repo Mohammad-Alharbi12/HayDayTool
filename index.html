@@ -1314,7 +1314,7 @@ async function verifyViaProxy(screenshotB64, media, guess, cands){
   const res = await fetch(PROXY_URL, {
     method:"POST",
     headers:{ "content-type":"application/json", "x-access-password":getPw() },
-    body: JSON.stringify({ mode:"verify", image:screenshotB64, media_type:media||"image/jpeg", guess, candidates:cands })
+    body: JSON.stringify({ mode:"verify", image:screenshotB64, media_type:media||"image/jpeg", guess, candidates:cands, names:ITEM_NAMES })
   });
   if(!res.ok) throw new Error("verify "+res.status);
   const d = await res.json();
