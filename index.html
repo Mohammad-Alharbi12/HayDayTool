@@ -399,6 +399,7 @@
         <span class="sv-status" id="planScanStatus" style="flex:1"></span>
       </div>
       <input type="file" id="planScanInput" accept="image/*" multiple hidden>
+      <div class="tip" style="margin-top:7px;font-size:12px;color:var(--muted)">💡 Order icons are tiny on a full screen. For the most accurate reads, crop or zoom to just the order you're scanning before uploading.</div>
       <div id="planReview"></div>
       <div id="planTargets"></div>
       <label class="invtoggle"><input type="checkbox" id="planUseInv" checked> Subtract what I already have in inventory</label>
@@ -1343,7 +1344,7 @@ async function scanOrders(files){
   for(let i=0;i<files.length;i++){
     setPlanScanStatus(`Reading order ${i+1} of ${files.length}…`,"busy");
     try{
-      let blob; try{ blob=await downscaleImage(files[i],1400,.82); }catch(e){ blob=files[i]; }
+      let blob; try{ blob=await downscaleImage(files[i],1568,.9); }catch(e){ blob=files[i]; }
       const b64=await blobToB64(blob);
       const items=await callVisionViaProxy(b64, blob.type||"image/jpeg", pw, "order");
       for(const x of items){
