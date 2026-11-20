@@ -340,7 +340,7 @@
 
   <header class="appbar">
       <img class="logo-img" src="assets/wordmark.png?v=3" alt="HayDay Tool" width="59" height="42">
-      <div class="ttl"><div class="sub">مساعد مزرعتك في هاي داي</div></div><label class="level-box">مستواك<input id="myLevel" type="number" min="1" max="126" value="126" inputmode="numeric" aria-label="مستواك"></label>
+      <div class="ttl"><div class="sub">مساعد مزرعتك في هاي داي</div></div><label class="level-box">مستواك<input id="myLevel" type="number" min="1" max="150" value="150" inputmode="numeric" aria-label="مستواك"></label>
       <button class="iconbtn" id="helpBtn" title="How this page works" aria-label="Help">
         <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
       </button>
@@ -692,12 +692,13 @@ function thumb(name, cls){
   if(!f) return "";
   const file=encodeURIComponent(f);
   return `<img class="${cls||"thumb"}" src="https://haydaytool.com/assets/items/${file}" onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/Mohammad-Alharbi12/HayDayTool/main/assets/items/${file}'" alt="${esc(name)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`;
+}
 
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const clean = v => typeof v === "string" ? v.replace(ZW, "").trim() : v;
-const LEVEL_KEY="haydaytool.myLevel";function getMyLevel(){const n=Number(localStorage.getItem(LEVEL_KEY));return Number.isFinite(n)&&n>=1?Math.min(126,n):126;}function setMyLevel(v){const n=Math.max(1,Math.min(126,Math.floor(Number(v)||1)));localStorage.setItem(LEVEL_KEY,String(n));renderBrowse();renderProfit();fillMachineSelects();}
+const LEVEL_KEY="haydaytool.myLevel";function getMyLevel(){const n=Number(localStorage.getItem(LEVEL_KEY));return Number.isFinite(n)&&n>=1?Math.min(150,n):150;}function setMyLevel(v){const n=Math.max(1,Math.min(150,Math.floor(Number(v)||1)));localStorage.setItem(LEVEL_KEY,String(n));renderBrowse();renderProfit();fillMachineSelects();}
 const storageOf = m => CROP_MACHINES.includes(String(m||"").toLowerCase()) ? "silo" : "barn";
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
