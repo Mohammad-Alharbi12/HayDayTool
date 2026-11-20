@@ -844,29 +844,21 @@ function itemMatches(i,q){
   const id=NAME_TO_ID[String(i.product||"").toLowerCase()];
   return recipeHasIngredient(id,n);
 }
-const MACHINE_IMAGE_FILES={
-  "Bakery":"Bakery.png","Feed Mill":"Feed Mill.png","Dairy":"Dairy.png","Sugar Mill":"Sugar Mill.png",
-  "Popcorn Pot":"Popcorn Pot.png","BBQ Grill":"BBQ Grill.png","Pie Oven":"Pie Oven.png","Loom":"Loom.png",
-  "Sewing Machine":"Sewing Machine.png","Cake Oven":"Cake Oven.png","Mine":"Mine.png","Smelter":"Smelter.png",
-  "Juice Press":"Juice Press.png","Lure Workbench":"Lure Workbench.png","Ice Cream Maker":"Ice Cream Maker.png",
-  "Net Maker":"Net Maker.png","Doner Kebab Stand":"Doner Kebab Stand.png","Jam Maker":"Jam Maker.png",
-  "Jeweler":"Jeweler.png","Honey Extractor":"Honey Extractor.png","Coffee Kiosk":"Coffee Kiosk.png",
-  "Soup Kitchen":"Soup Kitchen.png","Candle Maker":"Candle Maker.png","Flower Shop":"Flower Shop.png",
-  "Duck Salon":"Duck Salon Stage6.png","Candy Machine":"Candy Machine.png","Sauce Maker":"Sauce Maker.png",
-  "Sushi Bar":"Sushi Bar.png","Salad Bar":"Salad Bar.png","Sandwich Bar":"Sandwich Bar.png",
-  "Smoothie Mixer":"Smoothie Mixer.png","Pasta Maker":"Pasta Maker.png","Essential Oils Lab":"Essential Oils Lab.png",
-  "Wok Kitchen":"Wok Kitchen.png","Hat Maker":"Hat Maker.png","Pasta Kitchen":"Pasta Kitchen.png",
-  "Hot Dog Stand":"Hot Dog Stand.png","Donut Maker":"Donut Maker.png","Taco Kitchen":"Taco Kitchen.png",
-  "Omelet Station":"Omelet Station.png","Tea Stand":"Tea Stand.png","Fondue Pot":"Fondue Pot.png",
-  "Bath Kiosk":"Bath Kiosk.png","Deep Fryer":"Deep Fryer.png","Preservation Station":"Preservation Station.png",
-  "Pottery Studio":"Pottery Studio.png","Fudge Shop":"Fudge Shop.png","Yogurt Maker":"Yogurt Maker.png",
-  "Stew Pot":"Stew Pot.png","Cupcake Maker":"Cupcake Maker.png","Perfumerie":"Perfumerie.png",
-  "Waffle Maker":"Waffle Maker.png","Porridge Bar":"Porridge Bar.png","Milkshake Bar":"Milkshake Bar.png"
-};
+const MACHINE_IMAGE_SLUGS=new Set([
+  "bakery","bath_kiosk","bbq_grill","cake_oven","candle_maker","candy_machine","coffee_kiosk",
+  "cupcake_maker","dairy","deep_fryer","doner_kebab_stand","donut_maker","duck_salon",
+  "essential_oils_lab","feed_mill","flower_shop","fondue_pot","fudge_shop","hat_maker",
+  "honey_extractor","hot_dog_stand","ice_cream_maker","jam_maker","jeweler","juice_press",
+  "loom","milkshake_bar","omelet_station","pasta_kitchen","pasta_maker","perfumerie","pie_oven",
+  "popcorn_pot","porridge_bar","pottery_studio","preservation_station","salad_bar","sandwich_bar",
+  "sauce_maker","sewing_machine","smelter","smoothie_mixer","soup_kitchen","stew_pot","sugar_mill",
+  "sushi_bar","taco_kitchen","tea_stand","waffle_maker","wok_kitchen","yogurt_maker"
+]);
 function machineThumb(machine){
-  const file=MACHINE_IMAGE_FILES[machine];
-  if(!file) return "";
-  const url="https://hayday.fandom.com/wiki/Special:FilePath/"+encodeURIComponent(file);
+  let slug=String(machine||"").toLowerCase().replace(/&/g,"").replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
+  if(machine==="Dairy")slug="dairy";
+  if(!MACHINE_IMAGE_SLUGS.has(slug))return "";
+  const url="https://raw.githubusercontent.com/tyboro2002/hay_day_ecosystem/master/docs/assets/machines/"+slug+".png";
   return `<img class="machine-icon" src="${url}" alt="${esc(displayMachine(machine))}" loading="lazy" decoding="async" onerror="this.onerror=null;this.hidden=true">`;
 }
 function fillMachineSelects(){
