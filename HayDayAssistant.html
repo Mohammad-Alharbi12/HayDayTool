@@ -2106,7 +2106,7 @@ loadData();
       const qty=Math.max(1,Math.floor(Number(t.qty)||1));
       const done=Math.max(0,Math.min(qty,Math.floor(Number(t.done)||0)));
       let status=String(t.status||"notStarted").toLowerCase();
-      if(["completed","complete","done","مكتمل"].includes(status)||done>=qty)status="completed";
+      if(["completed","complete","done","مكتمل"].includes(status)||done>=qty){status="completed";done=qty;}
       else if(["making","inprogress","in_progress","قيد التجهيز"].includes(status)||done>0)status="making";
       else status="notStarted";
       return {...t,qty,done,status,destination:normalizeDestination(t.destination)};
@@ -2209,6 +2209,7 @@ loadData();
       t.status=el.value;
       if(t.status==="completed")t.done=t.qty;
       else if(t.status==="notStarted")t.done=0;
+      else if(t.done>=t.qty)t.done=Math.max(0,t.qty-1);
     }
     if(el.dataset.action==="qty"){
       t.qty=Math.max(1,Math.floor(Number(el.value)||1));
