@@ -684,7 +684,7 @@ let NAME_IMG = {};       // product name (lowercase) -> thumbnail filename, from
 function thumb(name, cls){
   const f = NAME_IMG[String(name||"").toLowerCase()];
   if(!f) return "";
-  return `<img class="${cls||"thumb"}" src="assets/items/${esc(f)}" alt="" loading="lazy" decoding="async">`;
+  return `<img class="${cls||"thumb"}" src="https://raw.githubusercontent.com/Mohammad-Alharbi12/HayDayTool/main/assets/items/${encodeURIComponent(f)}" alt="${esc(name)}" loading="lazy" decoding="async">`;
 }
 let planTargets = loadPlan();    // [{name, qty}] — persisted across reloads
 
