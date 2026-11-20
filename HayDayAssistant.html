@@ -2097,7 +2097,8 @@ loadData();
     if(/حديق|حيوان|zoo/.test(n))return defaults[4];
     if(/ديرب|derby/.test(n))return defaults[5];
     if(/اخرى|other|غير/.test(n))return defaults[6];
-    return destinations.includes(raw)?raw:defaults[6];
+    if(!destinations.includes(raw))destinations.push(raw);
+    return raw;
   }
   try{
     const saved=JSON.parse(localStorage.getItem(KEY)||"[]");
