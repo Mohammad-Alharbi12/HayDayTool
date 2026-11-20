@@ -303,20 +303,26 @@
   #hdTodo .hd-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
   #hdTodo .hd-head h2{margin:0}
   #hdTodo .hd-pill{background:#edf5e4;color:var(--leaf-d);border-radius:20px;padding:5px 10px;font-size:12px;font-weight:800;white-space:nowrap}
-  #hdTodo .hd-addrow{display:grid;grid-template-columns:minmax(120px,1fr) 70px minmax(120px,.8fr) auto;gap:7px;align-items:center}
+  #hdTodo .hd-addrow{display:grid;grid-template-columns:minmax(120px,1fr) 70px auto;gap:7px;align-items:center}
   #hdTaskName{min-width:0;width:100%}
   #hdTaskQty{width:70px;text-align:center;padding:8px}
-  #hdTaskDestination{min-width:0;width:100%;padding:8px;font-size:12px}
-  #hdTodo .hd-controls{display:flex;gap:8px;margin-top:10px}
-  #hdTodo .hd-controls select{flex:1;min-width:0;font-size:13px;padding:8px 25px 8px 9px;min-height:40px}
-  #hdTodo .hd-status-board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px;align-items:start}
-  #hdTodo .hd-status-column{min-width:0;border:1px solid var(--line);border-radius:12px;padding:8px;background:#fbfcf9}
-  #hdTodo .hd-status-title{font-size:13px;font-weight:850;margin:0 0 8px;display:flex;justify-content:space-between;gap:5px}
-  #hdTodo .hd-status-column .hd-task{margin:7px 0;padding:8px}
-  #hdTodo .hd-edit-number{width:54px;min-width:45px;padding:5px 3px;text-align:center;border:1px solid var(--line);border-radius:7px;font-weight:800}
-  #hdTodo .hd-qty-editor{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--muted)}
-  #hdTodo .hd-taskbottom select{max-width:100%}
-  @media(max-width:680px){#hdTodo .hd-status-board{grid-template-columns:1fr}#hdTodo .hd-addrow{grid-template-columns:minmax(0,1fr) 64px}#hdTaskDestination{grid-column:1 / 3}#hdAddTask{grid-column:1 / 3;width:100%}}
+  #hdTodo .hd-task-list{display:grid;grid-template-columns:1fr;gap:9px;margin-top:12px}
+  #hdTodo .hd-task{padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff}
+  #hdTodo .hd-tasktop{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+  #hdTodo .hd-taskname{font-weight:850}
+  #hdTodo .hd-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:8px 0}
+  #hdTodo .hd-metric{min-width:0;border:1px solid var(--line);border-radius:10px;padding:8px 5px;text-align:center;background:#f8faf6}
+  #hdTodo .hd-metric small{display:block;font-size:11px;font-weight:800;color:var(--muted);margin-bottom:5px}
+  #hdTodo .hd-metric strong{display:block;font-size:19px;line-height:1.2}
+  #hdTodo .hd-metric input{width:100%;max-width:72px;text-align:center;border:1px solid var(--line);border-radius:7px;padding:5px;font-weight:850;font-size:16px;background:white}
+  #hdTodo .hd-metric.remaining{background:#fff8e8}
+  #hdTodo .hd-metric.making{background:#eef5ff}
+  #hdTodo .hd-metric.completed{background:#edf8eb}
+  #hdTodo .hd-task-actions{display:flex;flex-wrap:wrap;align-items:center;gap:7px}
+  #hdTodo .hd-task-actions select{min-width:130px;max-width:100%;font-size:12px;padding:7px}
+  #hdTodo .hd-qty-editor{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+  #hdTodo .hd-edit-number{width:64px;padding:6px 3px;text-align:center;border:1px solid var(--line);border-radius:7px;font-weight:800}
+  @media(max-width:680px){#hdTodo .hd-addrow{grid-template-columns:minmax(0,1fr) 64px auto}#hdTodo .hd-metrics{gap:5px}#hdTodo .hd-metric{padding:7px 3px}#hdTodo .hd-metric small{font-size:10px}#hdTodo .hd-metric strong{font-size:17px}}
   #hdTodo .hd-ac{margin-top:6px;border:1px solid var(--line);border-radius:10px;overflow:hidden;max-height:190px;overflow-y:auto}
   #hdTodo .hd-suggestion{padding:9px 11px;border-bottom:1px solid var(--line2);cursor:pointer;font-size:14px}
   #hdTodo .hd-suggestion:last-child{border:0}
@@ -510,14 +516,10 @@
       <div class="hd-addrow">
         <input id="hdTaskName" type="search" placeholder="ابحث عن منتج أو اكتبه…" autocomplete="off">
         <input id="hdTaskQty" type="number" min="1" step="1" value="1" aria-label="الكمية">
-        <select id="hdTaskDestination" aria-label="وجهة الطلب"><option value="🚢 السفينة">🚢 السفينة</option><option value="🚚 الشاحنة">🚚 الشاحنة</option><option value="🏘️ البلدة">🏘️ البلدة</option><option value="🏡 زوار المزرعة">🏡 زوار المزرعة</option><option value="🦊 حديقة الحيوان">🦊 حديقة الحيوان</option><option value="🏆 الديربي">🏆 الديربي</option><option value="📦 أخرى" selected>📦 أخرى</option></select>
         <button class="btn primary" id="hdAddTask">إضافة</button>
       </div>
       <div class="hd-ac hide" id="hdSuggestions"></div>
-      <div class="hd-controls">
-        <select id="hdDestFilter"><option value="all">كل الوجهات</option></select>
-      </div>
-      <div id="hdTasks" class="hd-status-board"></div>
+      <div id="hdTasks" class="hd-task-list"></div>
       <div class="hd-foot">Your orders are saved on this device.</div>
     </div>
     <div id="hdLegacyList" style="display:none!important">
@@ -2104,12 +2106,15 @@ loadData();
     const saved=JSON.parse(localStorage.getItem(KEY)||"[]");
     if(Array.isArray(saved))tasks=saved.map(t=>{
       const qty=Math.max(1,Math.floor(Number(t.qty)||1));
-      const done=Math.max(0,Math.min(qty,Math.floor(Number(t.done)||0)));
-      let status=String(t.status||"notStarted").toLowerCase();
-      if(["completed","complete","done","مكتمل"].includes(status)||done>=qty){status="completed";done=qty;}
-      else if(["making","inprogress","in_progress","قيد التجهيز"].includes(status)||done>0)status="making";
-      else status="notStarted";
-      return {...t,qty,done,status,destination:normalizeDestination(t.destination)};
+      const legacyStatus=String(t.status||"notStarted").toLowerCase();
+      let completed=Math.max(0,Math.min(qty,Math.floor(Number(t.completed)||0)));
+      let making=Math.max(0,Math.min(qty-completed,Math.floor(Number(t.making)||0)));
+      if(t.completed==null&&t.making==null){
+        if(["completed","complete","done","مكتمل"].includes(legacyStatus)){completed=qty;making=0;}
+        else if(["making","inprogress","in_progress","قيد التجهيز"].includes(legacyStatus)){making=Math.min(qty,Math.floor(Number(t.done)||0));completed=0;}
+        else{completed=0;making=0;}
+      }
+      return {...t,qty,completed,making,done:completed,status:completed>=qty?"completed":making>0?"making":"notStarted",destination:normalizeDestination(t.destination)};
     });
   }catch(e){tasks=[];}
   try{
@@ -2120,61 +2125,39 @@ loadData();
     try{localStorage.setItem(KEY,JSON.stringify(tasks));localStorage.setItem(DESTKEY,JSON.stringify(destinations));}
     catch(e){console.warn("Could not save Hay Day tasks",e);}
   }
-  function selectedDestination(){return normalizeDestination($("hdTaskDestination")?.value||defaults[6]);}
-  function renderDest(){
-    const filter=$("hdDestFilter"),oldFilter=filter.value;
-    filter.innerHTML='<option value="all">كل الوجهات</option>'+destinations.map(d=>'<option value="'+esc(d)+'">'+esc(d)+'</option>').join("");
-    filter.value=[...filter.options].some(o=>o.value===oldFilter)?oldFilter:"all";
-    const addDest=$("hdTaskDestination"),oldAdd=addDest.value;
-    addDest.innerHTML=destinations.map(d=>'<option value="'+esc(d)+'">'+esc(d)+'</option>').join("");
-    addDest.value=destinations.includes(oldAdd)?oldAdd:defaults[6];
-  }
-  function add(name,qty=1,dest=selectedDestination()){
+  function add(name,qty=1){
     name=String(name||"").trim();if(!name)return;
     const normalized=normalizeSearch(name);
     const matched=DATA.find(x=>normalizeSearch(x.product)===normalized||normalizeSearch(x.ar)===normalized);
     if(matched)name=matched.product;
     qty=Math.max(1,Math.floor(Number(qty)||1));
-    dest=normalizeDestination(dest);
-    const found=tasks.find(t=>t.name.toLowerCase()===name.toLowerCase()&&t.destination===dest&&t.status!=="completed");
-    if(found)found.qty=Number(found.qty||1)+qty;
-    else tasks.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),name,qty,done:0,status:"notStarted",destination:dest});
-    save();$("hdDestFilter").value="all";render();
-    $("hdTaskName").value="";$("hdTaskQty").value="1";$("hdSuggestions").classList.add("hide");
+    tasks.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),name,qty,completed:0,making:0,done:0,status:"notStarted",destination:defaults[0]});
+    save();render();$("hdTaskName").value="";$("hdTaskQty").value="1";$("hdSuggestions").classList.add("hide");
   }
-  function addFromBrowse(name,qty){add(name,qty,selectedDestination());}
+  function addFromBrowse(name,qty){add(name,qty);}
+  function statusOf(t){return t.completed>=t.qty?"مكتمل":t.making>0?"قيد التجهيز":"غير مكتمل";}
   function taskCard(t){
-    const left=Math.max(0,Number(t.qty)-Number(t.done));
-    const st=t.status==="completed"?"مكتمل":t.status==="making"?"قيد التجهيز":"غير مكتمل";
-    return '<div class="hd-task '+(t.status==="completed"?'done':'')+'" data-task="'+esc(t.id)+'">'+
-      '<div class="hd-tasktop">'+thumb(t.name,"hd-taskimg")+'<span class="hd-taskname">'+esc(displayName(t.name))+'</span></div>'+
-      '<div class="hd-taskbottom">'+
-      '<span class="hd-state">'+st+'</span><span class="hd-progress">المتبقي '+digits(left)+'</span>'+
-      '<label class="hd-qty-editor">مكتمل <input class="hd-edit-number" type="number" min="0" max="'+digits(t.qty)+'" step="1" value="'+digits(t.done)+'" data-action="done"></label>'+
-      '<span class="hd-qty-editor">من <input class="hd-edit-number" type="number" min="1" step="1" value="'+digits(t.qty)+'" data-action="qty"></span>'+
-      '<button class="hd-mini" data-action="minus" '+(t.done<=0?'disabled':'')+'>−1</button>'+
-      '<button class="hd-mini" data-action="plus" '+(t.done>=t.qty?'disabled':'')+'>+1</button>'+
-      '<select data-action="status" aria-label="حالة الطلب"><option value="notStarted" '+(t.status==="notStarted"?'selected':'')+'>غير مكتمل</option><option value="making" '+(t.status==="making"?'selected':'')+'>قيد التجهيز</option><option value="completed" '+(t.status==="completed"?'selected':'')+'>مكتمل</option></select>'+
+    const remaining=Math.max(0,t.qty-t.making-t.completed);
+    return '<div class="hd-task" data-task="'+esc(t.id)+'">'+
+      '<div class="hd-tasktop">'+thumb(t.name,"hd-taskimg")+'<span class="hd-taskname">'+esc(displayName(t.name))+'</span><span class="hd-state">'+statusOf(t)+'</span></div>'+
+      '<div class="hd-metrics">'+
+      '<div class="hd-metric remaining"><small>غير مكتمل</small><strong>'+digits(remaining)+'</strong></div>'+
+      '<div class="hd-metric making"><small>قيد التجهيز</small><input type="number" min="0" max="'+digits(t.qty-t.completed)+'" step="1" value="'+digits(t.making)+'" data-action="making" aria-label="الكمية قيد التجهيز"></div>'+
+      '<div class="hd-metric completed"><small>مكتمل</small><input type="number" min="0" max="'+digits(t.qty-t.making)+'" step="1" value="'+digits(t.completed)+'" data-action="completed" aria-label="الكمية المكتملة"></div>'+
+      '</div>'+
+      '<div class="hd-task-actions">'+
+      '<label class="hd-qty-editor">إجمالي الطلب <input class="hd-edit-number" type="number" min="1" step="1" value="'+digits(t.qty)+'" data-action="qty"></label>'+
+      '<button class="hd-mini" data-action="make-plus" '+(remaining<=0?'disabled':'')+'>تجهيز +1</button>'+
+      '<button class="hd-mini" data-action="complete-plus" '+(t.completed>=t.qty?'disabled':'')+'>مكتمل +1</button>'+
+      '<button class="hd-mini" data-action="complete-minus" '+(t.completed<=0?'disabled':'')+'>تراجع −1</button>'+
       '<select data-action="destination" aria-label="الوجهة">'+destinations.map(d=>'<option value="'+esc(d)+'" '+(d===t.destination?'selected':'')+'>'+esc(d)+'</option>').join("")+'</select>'+
       '<button class="hd-mini hd-delete" data-action="delete">حذف</button></div></div>';
   }
   function render(){
-    renderDest();
-    const dest=$("hdDestFilter").value;
-    const visible=tasks.filter(t=>dest==="all"||t.destination===dest);
-    const groups=[
-      {status:"notStarted",title:"غير مكتمل"},
-      {status:"making",title:"قيد التجهيز"},
-      {status:"completed",title:"مكتمل"}
-    ];
     $("hdTodoCount").textContent=digits(tasks.length)+" طلب";
-    $("hdTasks").innerHTML=groups.map(g=>{
-      const list=visible.filter(t=>t.status===g.status);
-      return '<section class="hd-status-column"><h3 class="hd-status-title"><span>'+g.title+'</span><span>'+digits(list.length)+'</span></h3>'+
-        (list.length?list.map(taskCard).join(""):'<div class="hd-empty">لا توجد طلبات</div>')+'</section>';
-    }).join("");
+    $("hdTasks").innerHTML=tasks.length?tasks.map(taskCard).join(""):'<div class="hd-empty">ما أضفت أي طلبات للحين</div>';
   }
-  $("hdAddTask").addEventListener("click",()=>add($("hdTaskName").value,$("hdTaskQty").value,selectedDestination()));
+  $("hdAddTask").addEventListener("click",()=>add($("hdTaskName").value,$("hdTaskQty").value));
   $("hdTaskName").addEventListener("input",()=>{
     const q=$("hdTaskName").value.trim(),box=$("hdSuggestions");
     if(!q){box.classList.add("hide");return;}
@@ -2183,47 +2166,46 @@ loadData();
     box.innerHTML=goods.map(x=>'<div class="hd-suggestion" data-pick="'+esc(x.product)+'">'+thumb(x.product,"thumb-sm")+'<span>'+esc(x.ar||displayName(x.product))+' <small>'+esc(x.product)+' · '+(x.level>getMyLevel()?'مقفل حتى مستوى '+digits(x.level):'مستوى '+digits(x.level))+'</small></span></div>').join("");
     box.classList.toggle("hide",!goods.length);
   });
-  $("hdTaskName").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();add($("hdTaskName").value,$("hdTaskQty").value,selectedDestination());}});
+  $("hdTaskName").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();add($("hdTaskName").value,$("hdTaskQty").value);}});
   $("hdSuggestions").addEventListener("click",e=>{const x=e.target.closest("[data-pick]");if(x){$("hdTaskName").value=x.dataset.pick;$("hdSuggestions").classList.add("hide");}});
-  $("hdDestFilter").addEventListener("change",render);
   $("hdTasks").addEventListener("click",e=>{
     const b=e.target.closest("[data-action]");if(!b)return;
-    const card=b.closest("[data-task]"),t=tasks.find(x=>x.id===card?.dataset.task);if(!t)return;
-    if(b.dataset.action==="plus")t.done=Math.min(t.qty,t.done+1);
-    if(b.dataset.action==="minus")t.done=Math.max(0,t.done-1);
-    if(b.dataset.action==="delete")tasks=tasks.filter(x=>x.id!==t.id);
-    if(b.dataset.action==="plus"||b.dataset.action==="minus"){
-      t.status=t.done>=t.qty?"completed":(t.done>0?"making":"notStarted");
+    const t=tasks.find(x=>x.id===b.closest("[data-task]")?.dataset.task);if(!t)return;
+    if(b.dataset.action==="make-plus"&&t.making+t.completed<t.qty)t.making++;
+    if(b.dataset.action==="complete-plus"&&t.completed<t.qty){
+      if(t.making>0)t.making--;
+      t.completed++;
     }
+    if(b.dataset.action==="complete-minus"&&t.completed>0){
+      t.completed--;
+      t.making++;
+    }
+    if(b.dataset.action==="delete")tasks=tasks.filter(x=>x.id!==t.id);
+    t.done=t.completed;t.status=t.completed>=t.qty?"completed":t.making>0?"making":"notStarted";
     save();render();
   });
   $("hdTasks").addEventListener("change",e=>{
     const el=e.target.closest("[data-action]");if(!el)return;
     const t=tasks.find(x=>x.id===el.closest("[data-task]")?.dataset.task);if(!t)return;
-    if(el.dataset.action==="destination"){
-      const chosen=String(el.value||"");
-      if(!destinations.includes(chosen))destinations.push(chosen);
-      t.destination=chosen;
-    }
-    if(el.dataset.action==="status"){
-      t.status=el.value;
-      if(t.status==="completed")t.done=t.qty;
-      else if(t.status==="notStarted")t.done=0;
-      else if(t.done>=t.qty)t.done=Math.max(0,t.qty-1);
-    }
+    if(el.dataset.action==="destination")t.destination=normalizeDestination(el.value);
     if(el.dataset.action==="qty"){
       t.qty=Math.max(1,Math.floor(Number(el.value)||1));
-      t.done=Math.min(t.done,t.qty);
-      t.status=t.done>=t.qty?"completed":(t.done>0?"making":t.status==="making"?"making":"notStarted");
+      if(t.completed+t.making>t.qty)t.making=Math.max(0,t.qty-t.completed);
+      if(t.completed>t.qty){t.completed=t.qty;t.making=0;}
     }
-    if(el.dataset.action==="done"){
-      t.done=Math.max(0,Math.min(t.qty,Math.floor(Number(el.value)||0)));
-      t.status=t.done>=t.qty?"completed":(t.done>0?"making":"notStarted");
+    if(el.dataset.action==="making"){
+      t.making=Math.max(0,Math.min(t.qty-t.completed,Math.floor(Number(el.value)||0)));
     }
+    if(el.dataset.action==="completed"){
+      t.completed=Math.max(0,Math.min(t.qty,Math.floor(Number(el.value)||0)));
+      t.making=Math.min(t.making,t.qty-t.completed);
+    }
+    t.done=t.completed;t.status=t.completed>=t.qty?"completed":t.making>0?"making":"notStarted";
     save();render();
   });
   window.HD_TODO={addFromBrowse,render};
   save();render();
+})();
 })();
 })();
 </script>
