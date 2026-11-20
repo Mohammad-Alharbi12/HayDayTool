@@ -2106,8 +2106,14 @@ loadData();
     const saved=JSON.parse(localStorage.getItem(KEY)||"[]");
     if(Array.isArray(saved))tasks=saved.map(t=>{
       const qty=Math.max(1,Math.floor(Number(t.qty)||1));
-      const completed=Math.max(0,Math.min(qty,Math.floor(Number(t.completed??t.done)||0)));
-      const making=Math.max(0,Math.min(qty-completed,Math.floor(Number(t.making)||0)));
+      const legacyStatus=String(t.status||"notStarted").toLowerCase();
+      let completed=Math.max(0,Math.min(qty,Math.floor(Number(t.completed)||0)));
+      let making=Math.max(0,Math.min(qty-completed,Math.floor(Number(t.making)||0)));
+      if(t.completed==null&&t.making==null){
+        if(["completed","complete","done","مكتمل"].includes(legacyStatus)){completed=qty;making=0;}
+        else if(["making","inprogress","in_progress","قيد التجهيز"].includes(legacyStatus)){making=Math.min(qty,Math.floor(Number(t.done)||0));completed=0;}
+        else{completed=0;making=0;}
+      }
       return {...t,qty,completed,making,done:completed,status:completed>=qty?"completed":making>0?"making":"notStarted",destination:normalizeDestination(t.destination)};
     });
   }catch(e){tasks=[];}
