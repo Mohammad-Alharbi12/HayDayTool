@@ -811,6 +811,8 @@ const profCell = p => {
 };
 function machines(){ return [...new Set(DATA.map(i=>i.machine))].sort((a,b)=>a.localeCompare(b)); }
 function displayName(name){const it=DATA.find(x=>x.product.toLowerCase()===String(name||'').toLowerCase());return it?it.ar:name;}
+const MACHINE_AR={"Ice Cream Maker":"آلة المثلجات","Trees & Bushes":"الأشجار والشجيرات","Tea Stand":"منضدة الشاي","Jam Maker":"آلة المربى","Juice Press":"عصارة","Pie Oven":"فرن الفطائر","Porridge Bar":"ركن العصيدة","Crops":"المحاصيل","Animal Products":"منتجات الحيوانات","BBQ Grill":"شواية","Donut Maker":"آلة الدونات","Fondue Pot":"قدر الفوندو","Deep Fryer":"القلاية","Bakery":"المخبز","Sauce Maker":"آلة الصلصات","Salad Bar":"ركن السلطات","Honey Extractor":"مستخرج العسل","Sushi Bar":"ركن السوشي","Flower Shop":"محل الزهور","Loom":"النول","Sewing Machine":"آلة الخياطة","Cake Oven":"فرن الكعك","Coffee Kiosk":"كشك القهوة","Perfumerie":"مصنع العطور","Candy Machine":"آلة الحلوى","Preservation Station":"محطة الحفظ","Soup Kitchen":"مطبخ الشوربة","Net Maker":"آلة الشباك","Hat Maker":"آلة القبعات","Jeweler":"الصائغ","Feed Mill":"مطحنة العلف","Smelter":"المصهر","Mine":"المنجم","Wok Kitchen":"مطبخ الووك","Sandwich Bar":"ركن الشطائر","Taco Kitchen":"مطبخ التاكو","Pasta Kitchen":"مطبخ المعكرونة","Pasta Maker":"آلة المعكرونة","Omelet Station":"محطة العجة","Stew Pot":"قدر اليخنة","Cupcake Maker":"آلة الكعك الصغير","Waffle Maker":"آلة الوافل","Pottery Studio":"استوديو الفخار","Candle Maker":"آلة الشموع","Bath Kiosk":"كشك الاستحمام","Essential Oils Lab":"مختبر الزيوت العطرية","Yogurt Maker":"آلة الزبادي","Milkshake Bar":"ركن الميلك شيك","Doner Kebab Stand":"كشك الدونر","Hot Dog Stand":"كشك الهوت دوغ","Wok Kitchen":"مطبخ الووك","Popcorn Pot":"قدر الفشار","Lure Workbench":"طاولة الطعوم","Coffee Kiosk":"كشك القهوة","Smoothie Mixer":"خلاط العصائر","Pottery Studio":"استوديو الفخار"};
+function displayMachine(name){return MACHINE_AR[name]||name;}
 function normalizeSearch(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f\\u064B-\\u065F\\u0670\\u0640]/g,'').replace(/[أإآٱ]/g,'ا').replace(/[ىي]/g,'ي').replace(/ة/g,'ه').replace(/^ال/,'').replace(/\\s+/g,' ').trim();}
 function itemMatches(i,q){const n=normalizeSearch(q);return [i.product,i.ar,i.machine].some(v=>normalizeSearch(v).includes(n));}
 function fillMachineSelects(){
@@ -868,7 +870,7 @@ function renderBrowse(){
 
   if(!grouping){
     $("#browseBody").innerHTML = rows.map(i=>
-      itemRow(i, `<span class="chip">${esc(i.machine)}</span> · Lv ${i.level??"—"} · ${fmtTime(i.time_min)}`)
+      itemRow(i, `<span class="chip">${esc(displayMachine(i.machine))}</span> · Lv ${i.level??"—"} · ${fmtTime(i.time_min)}`)
     ).join("");
     return;
   }
@@ -888,7 +890,7 @@ function renderBrowse(){
     return `<div class="grp">
       <button class="grp-head ${open?"open":""}" data-grp="${esc(m)}">
         <span class="chev">▸</span>
-        <span class="grp-name">${esc(m)}</span>
+        <span class="grp-name">${esc(displayMachine(m))}</span>
         <span class="grp-count">${groups[m].length}</span>
       </button>
       <div class="grp-body ${open?"":"hide"}">${groups[m].map(i=>itemRow(i, meta(i))).join("")}</div>
@@ -916,7 +918,7 @@ function renderProfit(){
       <div class="ir-rank">${n+1}</div>
       ${thumb(i.product)}
       <div class="ir-main">
-        <div class="ir-name">${esc(i.product)}</div>
+        <div class="ir-name">${esc(displayName(i.product))}</div>
         <div class="ir-meta"><span class="chip">${esc(i.machine)}</span> · Lv ${i.level??"—"} · ${fmtNum(i.xp_per_hour)} xp/hr</div>
       </div>
       <div class="ir-prof ${profCls(i.profit_per_hour)}">${profNum(i.profit_per_hour)}<small>coin/hr</small></div>
@@ -1033,8 +1035,8 @@ function renderList(){
         <input type="checkbox" data-chk="${id}" ${it.checked?'checked':''}>
         <input type="number" class="amt" min="1" value="${it.amount}" data-amt="${id}">
         ${thumb(it.product,"thumb-sm")}
-        <span class="nm">${esc(it.product)}${(()=>{const h=invHave(it.product);return h?` <span class="have-chip">have ${h.toLocaleString()}</span>`:"";})()}</span>
-        <span class="st">${store}</span>
+        <span class="nm">${esc(displayName(it.product))}${(()=>{const h=invHave(it.product);return h?` <span class="have-chip">لديك ${h.toLocaleString()}</span>`:"";})()}</span>
+        <span class="st">${store==="barn"?"المخزن":"الصومعة"}</span>
         <button class="x" data-del="${id}" title="Remove">×</button>
       </div>`;
     }
@@ -1162,7 +1164,7 @@ function renderInv(){
         </div>
         <button class="thumbbtn" data-invswap="${id}" title="Wrong item? Tap to fix">${thumb(it.product,"thumb-sm")}</button>
         <span class="nm">${esc(displayName(it.product))}</span>
-        <span class="st">${store}</span>
+        <span class="st">${store==="barn"?"المخزن":"الصومعة"}</span>
         <button class="swap" data-invswap="${id}" title="Fix item">✎</button>
         <button class="x" data-invdel="${id}" title="Remove">×</button>
       </div>`;
@@ -1814,11 +1816,11 @@ function attachSwapAC(input, onChoose, onCancel){
   const hl = (name,q)=>{ const i=name.toLowerCase().indexOf(q.toLowerCase());
     if(i<0||!q) return esc(name);
     return esc(name.slice(0,i))+"<b>"+esc(name.slice(i,i+q.length))+"</b>"+esc(name.slice(i+q.length)); };
-  function build(q){ const ql=q.toLowerCase(), starts=[], incl=[];
-    for(const n of ITEM_NAMES){ const idx=n.toLowerCase().indexOf(ql); if(idx===0) starts.push(n); else if(idx>0) incl.push(n); }
+  function build(q){ const ql=normalizeSearch(q), starts=[], incl=[];
+    for(const n of ITEM_NAMES){const it=DATA.find(x=>x.product===n);if(!it)continue;const hit=normalizeSearch(n).includes(ql)||normalizeSearch(it.ar).includes(ql);if(hit){if(normalizeSearch(it.ar).startsWith(ql)||normalizeSearch(n).startsWith(ql))starts.push(n);else incl.push(n);}}
     items = starts.concat(incl).slice(0,8); }
   function paint(){ menu.innerHTML = items.map((n,i)=>
-    `<div class="ac-item${i===active?' active':''}" data-i="${i}"><span>${hl(n,input.value.trim())}</span><span class="ac-mac">${esc(machineOf(n))}</span></div>`).join(""); }
+    `<div class="ac-item${i===active?' active':''}" data-i="${i}"><span>${esc(displayName(n))} <small class="ac-en">${esc(n)}</small></span><span class="ac-mac">${esc(displayMachine(machineOf(n)))}</span></div>`).join(""); }
   function show(){ const q=input.value.trim();
     if(q.length<1||!ITEM_NAMES.length){ close(); return; }
     build(q); if(!items.length){ close(); return; }
