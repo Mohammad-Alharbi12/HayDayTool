@@ -320,6 +320,9 @@
   #hdTodo .hd-task.done{opacity:.48;background:#f4f8ef}
   #hdTodo .hd-task.done .hd-taskname{text-decoration:line-through}
   #hdTodo .hd-tasktop{display:flex;align-items:center;gap:8px}
+  #hdTodo .hd-tasktop .hd-taskimg{width:38px;height:38px;object-fit:contain;flex:0 0 38px;border-radius:9px;background:#f4f8ef;border:1px solid var(--line2);padding:2px}
+  #hdTodo .hd-suggestion{display:flex;align-items:center;gap:8px}
+  #hdTodo .hd-suggestion .thumb-sm{width:30px;height:30px;flex:0 0 30px}
   #hdTodo .hd-taskname{font-weight:750;flex:1;min-width:0;overflow-wrap:anywhere}
   #hdTodo .hd-taskqty{font-variant-numeric:tabular-nums;font-weight:800;color:var(--leaf-d);white-space:nowrap}
   #hdTodo .hd-taskbottom{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:9px}
@@ -685,8 +688,9 @@ function thumb(name, cls){
   const f = NAME_IMG[String(name||"").toLowerCase()];
   if(!f) return "";
   return `<img class="${cls||"thumb"}" src="https://raw.githubusercontent.com/Mohammad-Alharbi12/HayDayTool/main/assets/items/${encodeURIComponent(f)}" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/Mohammad-Alharbi12/HayDayTool@main/assets/items/${encodeURIComponent(f)}'" alt="${esc(name)}" loading="lazy" decoding="async">`;
-}
-let planTargets = loadPlan();    // [{name, qty}] — persisted across reloads
+  const file=encodeURIComponent(f);
+  return `<img class="${cls||"thumb"}" src="https://haydaytool.com/assets/items/${file}" onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/Mohammad-Alharbi12/HayDayTool/main/assets/items/${file}'" alt="${esc(name)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`;
+
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -2036,6 +2040,9 @@ loadData();
   const digits=n=>String(n).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d));
   function add(name,qty=1,dest=destinations[6]||destinations[0]){
     name=String(name||"").trim();if(!name)return;
+    const normalized=normalizeSearch(name);
+    const matched=DATA.find(x=>normalizeSearch(x.product)===normalized||normalizeSearch(x.ar)===normalized);
+    if(matched)name=matched.product;
     qty=Math.max(1,Math.floor(Number(qty)||1));
     const found=tasks.find(t=>t.name.toLowerCase()===name.toLowerCase()&&t.destination===dest&&t.status!=="completed");
     if(found)found.qty+=qty;
@@ -2059,7 +2066,7 @@ loadData();
       const left=Math.max(0,Number(t.qty||1)-Number(t.done||0));
       const st=t.status==="completed"?"Completed":t.status==="making"?"Making":"Not started";
       return '<div class="hd-task '+(t.status==="completed"?'done':'')+'" data-task="'+esc(t.id)+'">'+
-        '<div class="hd-tasktop"><span class="hd-taskname">'+esc(t.name)+'</span><span class="hd-taskqty">'+digits(t.done||0)+' / '+digits(t.qty||1)+'</span></div>'+
+        '<div class="hd-tasktop">'+thumb(t.name,"hd-taskimg")+'<span class="hd-taskname">'+esc(displayName(t.name))+'</span><span class="hd-taskqty">'+digits(t.done||0)+' / '+digits(t.qty||1)+'</span></div>'+
         '<div class="hd-taskbottom"><span class="hd-state">'+st+'</span>'+
         '<button class="hd-mini" data-action="minus" '+(Number(t.done||0)<=0?'disabled':'')+'>−1</button>'+
         '<button class="hd-mini" data-action="plus" '+(Number(t.done||0)>=Number(t.qty||1)?'disabled':'')+'>+1</button>'+
@@ -2073,7 +2080,7 @@ loadData();
     const q=$("hdTaskName").value.trim().toLowerCase(),box=$("hdSuggestions");
     if(!q){box.classList.add("hide");return;}
     const goods=(window.HAYDAY_GOODS?.items||[]).filter(x=>itemMatches(x,q)).slice(0,8);
-    box.innerHTML=goods.map(x=>'<div class="hd-suggestion" data-pick="'+esc(x.product)+'">'+esc(x.ar||x.product)+' <small>'+esc(x.product)+' · Lv. '+digits(x.level)+'</small></div>').join("");
+    box.innerHTML=goods.map(x=>'<div class="hd-suggestion" data-pick="'+esc(x.product)+'">'+thumb(x.product,"thumb-sm")+'<span>'+esc(x.ar||x.product)+' <small>'+esc(x.product)+' · Lv. '+digits(x.level)+'</small></span></div>').join("");
     box.classList.toggle("hide",!goods.length);
   });
   $("hdTaskName").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();add($("hdTaskName").value,$("hdTaskQty").value);}});
