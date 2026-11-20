@@ -685,9 +685,11 @@ let NAME_MACHINE = {};   // product name -> machine, from live data
 let NAME_IMG = {};       // product name (lowercase) -> thumbnail filename, from the wiki
 // Returns an <img> thumbnail tag for a product name, or "" if we have no image.
 function thumb(name, cls){
-  const f = NAME_IMG[String(name||"").toLowerCase()];
+  const rawName=String(name||"");
+  const matched=(DATA||[]).find(i=>String(i.product||"").toLowerCase()===rawName.toLowerCase() || (i.ar&&normalizeSearch(i.ar)===normalizeSearch(rawName)));
+  const key=matched?matched.product:rawName;
+  const f = NAME_IMG[String(key).toLowerCase()];
   if(!f) return "";
-  return `<img class="${cls||"thumb"}" src="https://raw.githubusercontent.com/Mohammad-Alharbi12/HayDayTool/main/assets/items/${encodeURIComponent(f)}" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/Mohammad-Alharbi12/HayDayTool@main/assets/items/${encodeURIComponent(f)}'" alt="${esc(name)}" loading="lazy" decoding="async">`;
   const file=encodeURIComponent(f);
   return `<img class="${cls||"thumb"}" src="https://haydaytool.com/assets/items/${file}" onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/Mohammad-Alharbi12/HayDayTool/main/assets/items/${file}'" alt="${esc(name)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`;
 
@@ -816,7 +818,7 @@ const profCell = p => {
   return `<span class="${c}">${Math.round(p).toLocaleString()}</span>`;
 };
 function machines(){ return [...new Set(DATA.map(i=>i.machine))].sort((a,b)=>a.localeCompare(b)); }
-function displayName(name){const it=DATA.find(x=>x.product.toLowerCase()===String(name||'').toLowerCase());return it?it.ar:name;}
+function displayName(name){const raw=String(name||'');const it=DATA.find(x=>x.product.toLowerCase()===raw.toLowerCase()||(x.ar&&normalizeSearch(x.ar)===normalizeSearch(raw)));return it?it.ar:name;}
 const MACHINE_AR={"Ice Cream Maker":"آلة المثلجات","Trees & Bushes":"الأشجار والشجيرات","Tea Stand":"منضدة الشاي","Jam Maker":"آلة المربى","Juice Press":"عصارة","Pie Oven":"فرن الفطائر","Porridge Bar":"ركن العصيدة","Crops":"المحاصيل","Animal Products":"منتجات الحيوانات","BBQ Grill":"شواية","Donut Maker":"آلة الدونات","Fondue Pot":"قدر الفوندو","Deep Fryer":"القلاية","Bakery":"المخبز","Sauce Maker":"آلة الصلصات","Salad Bar":"ركن السلطات","Honey Extractor":"مستخرج العسل","Sushi Bar":"ركن السوشي","Flower Shop":"محل الزهور","Loom":"النول","Sewing Machine":"آلة الخياطة","Cake Oven":"فرن الكعك","Coffee Kiosk":"كشك القهوة","Perfumerie":"مصنع العطور","Candy Machine":"آلة الحلوى","Preservation Station":"محطة الحفظ","Soup Kitchen":"مطبخ الشوربة","Net Maker":"آلة الشباك","Hat Maker":"آلة القبعات","Jeweler":"الصائغ","Feed Mill":"مطحنة العلف","Smelter":"المصهر","Mine":"المنجم","Wok Kitchen":"مطبخ الووك","Sandwich Bar":"ركن الشطائر","Taco Kitchen":"مطبخ التاكو","Pasta Kitchen":"مطبخ المعكرونة","Pasta Maker":"آلة المعكرونة","Omelet Station":"محطة العجة","Stew Pot":"قدر اليخنة","Cupcake Maker":"آلة الكعك الصغير","Waffle Maker":"آلة الوافل","Pottery Studio":"استوديو الفخار","Candle Maker":"آلة الشموع","Bath Kiosk":"كشك الاستحمام","Essential Oils Lab":"مختبر الزيوت العطرية","Yogurt Maker":"آلة الزبادي","Milkshake Bar":"ركن الميلك شيك","Doner Kebab Stand":"كشك الدونر","Hot Dog Stand":"كشك الهوت دوغ","Wok Kitchen":"مطبخ الووك","Popcorn Pot":"قدر الفشار","Lure Workbench":"طاولة الطعوم","Coffee Kiosk":"كشك القهوة","Smoothie Mixer":"خلاط العصائر","Pottery Studio":"استوديو الفخار"};
 function displayMachine(name){return MACHINE_AR[name]||name;}
 function normalizeSearch(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f\\u064B-\\u065F\\u0670\\u0640]/g,'').replace(/[أإآٱ]/g,'ا').replace(/[ىي]/g,'ي').replace(/ة/g,'ه').replace(/^ال/,'').replace(/\\s+/g,' ').trim();}
