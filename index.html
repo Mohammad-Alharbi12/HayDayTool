@@ -324,6 +324,11 @@
   #hdTodo .hd-suggestion{display:flex;align-items:center;gap:8px}
   #hdTodo .hd-suggestion .thumb-sm{width:30px;height:30px;flex:0 0 30px}
   #hdTodo .hd-taskname{font-weight:750;flex:1;min-width:0;overflow-wrap:anywhere}
+  #hdTodo .hd-check{background:#edf7e8;border-color:#b9d8aa;color:#246026}
+  #hdTodo .hd-check:disabled{opacity:.55}
+  .locked-level{display:inline-block;background:#fff2d8;color:#8a5a00;border-radius:7px;padding:2px 6px;font-weight:800;font-size:10px}
+  .machine-chip{display:inline-flex;align-items:center;gap:4px}
+  .machine-mini{width:22px;height:22px;object-fit:contain;vertical-align:middle;border-radius:5px;background:#f4f8ef}
   #hdTodo .hd-taskqty{font-variant-numeric:tabular-nums;font-weight:800;color:var(--leaf-d);white-space:nowrap}
   #hdTodo .hd-taskbottom{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:9px}
   #hdTodo .hd-taskbottom select{min-height:34px;padding:5px 24px 5px 8px;font-size:12px;flex:1;min-width:105px}
@@ -691,7 +696,7 @@ function thumb(name, cls){
   const f = NAME_IMG[String(key).toLowerCase()];
   if(!f) return "";
   const file=encodeURIComponent(f);
-  return `<img class="${cls||"thumb"}" src="https://haydaytool.com/assets/items/${file}" onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/Mohammad-Alharbi12/HayDayTool/main/assets/items/${file}'" alt="${esc(name)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`;
+  return `<img class="${cls||"thumb"}" src="https://raw.githubusercontent.com/Mohammad-Alharbi12/HayDayTool/main/assets/items/${file}" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/Mohammad-Alharbi12/HayDayTool@main/assets/items/${file}'" alt="${esc(name)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`;
 }
 
 
@@ -823,7 +828,28 @@ function displayName(name){const raw=String(name||'');const it=DATA.find(x=>x.pr
 const MACHINE_AR={"Ice Cream Maker":"آلة المثلجات","Trees & Bushes":"الأشجار والشجيرات","Tea Stand":"منضدة الشاي","Jam Maker":"آلة المربى","Juice Press":"عصارة","Pie Oven":"فرن الفطائر","Porridge Bar":"ركن العصيدة","Crops":"المحاصيل","Animal Products":"منتجات الحيوانات","BBQ Grill":"شواية","Donut Maker":"آلة الدونات","Fondue Pot":"قدر الفوندو","Deep Fryer":"القلاية","Bakery":"المخبز","Sauce Maker":"آلة الصلصات","Salad Bar":"ركن السلطات","Honey Extractor":"مستخرج العسل","Sushi Bar":"ركن السوشي","Flower Shop":"محل الزهور","Loom":"النول","Sewing Machine":"آلة الخياطة","Cake Oven":"فرن الكعك","Coffee Kiosk":"كشك القهوة","Perfumerie":"مصنع العطور","Candy Machine":"آلة الحلوى","Preservation Station":"محطة الحفظ","Soup Kitchen":"مطبخ الشوربة","Net Maker":"آلة الشباك","Hat Maker":"آلة القبعات","Jeweler":"الصائغ","Feed Mill":"مطحنة العلف","Smelter":"المصهر","Mine":"المنجم","Wok Kitchen":"مطبخ الووك","Sandwich Bar":"ركن الشطائر","Taco Kitchen":"مطبخ التاكو","Pasta Kitchen":"مطبخ المعكرونة","Pasta Maker":"آلة المعكرونة","Omelet Station":"محطة العجة","Stew Pot":"قدر اليخنة","Cupcake Maker":"آلة الكعك الصغير","Waffle Maker":"آلة الوافل","Pottery Studio":"استوديو الفخار","Candle Maker":"آلة الشموع","Bath Kiosk":"كشك الاستحمام","Essential Oils Lab":"مختبر الزيوت العطرية","Yogurt Maker":"آلة الزبادي","Milkshake Bar":"ركن الميلك شيك","Doner Kebab Stand":"كشك الدونر","Hot Dog Stand":"كشك الهوت دوغ","Wok Kitchen":"مطبخ الووك","Popcorn Pot":"قدر الفشار","Lure Workbench":"طاولة الطعوم","Coffee Kiosk":"كشك القهوة","Smoothie Mixer":"خلاط العصائر","Pottery Studio":"استوديو الفخار"};
 function displayMachine(name){return MACHINE_AR[name]||name;}
 function normalizeSearch(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f\\u064B-\\u065F\\u0670\\u0640]/g,'').replace(/[أإآٱ]/g,'ا').replace(/[ىي]/g,'ي').replace(/ة/g,'ه').replace(/^ال/,'').replace(/\\s+/g,' ').trim();}
-function itemMatches(i,q){const n=normalizeSearch(q);return [i.product,i.ar,i.machine].some(v=>normalizeSearch(v).includes(n));}
+function recipeHasIngredient(id, needle, seen=new Set()){
+  if(!id||seen.has(id)) return false;
+  seen.add(id);
+  const recipe=RECIPES[id];
+  if(!recipe||!Array.isArray(recipe.ing)) return false;
+  for(const ing of recipe.ing){
+    const names=[ing.name,displayName(ing.name)];
+    if(names.some(v=>normalizeSearch(v).includes(needle))) return true;
+    const child=NAME_TO_ID[String(ing.name||"").toLowerCase()]||String(ing.id||"");
+    if(recipeHasIngredient(child,needle,seen)) return true;
+  }
+  return false;
+}
+function itemMatches(i,q){
+  const n=normalizeSearch(q); if(!n) return true;
+  if([i.product,i.ar,i.machine].some(v=>normalizeSearch(v).includes(n))) return true;
+  const id=NAME_TO_ID[String(i.product||"").toLowerCase()];
+  return recipeHasIngredient(id,n);
+}
+function machineRepresentative(machine){
+  return DATA.filter(x=>x.machine===machine&&x.img).sort((a,b)=>(a.level||999)-(b.level||999))[0]||null;
+}
 function fillMachineSelects(){
   const opts = machines().filter(m=>DATA.some(i=>i.machine===m&&i.level<=getMyLevel())).map(m=>`<option value="${esc(m)}">${esc(displayMachine(m))}</option>`).join("");
   for(const id of ["#machineFilter","#pMachine"]){
@@ -856,7 +882,9 @@ function renderBrowse(){
   const q = $("#q").value.trim().toLowerCase();
   const mf = $("#machineFilter").value.toLowerCase();
   const quick = $("#quick").value;
-  let rows = DATA.filter(i=>i.level<=getMyLevel());
+  // With an active search, include locked goods too so ingredients/products
+  // from later levels are discoverable; browsing without a query stays level-gated.
+  let rows = DATA.filter(i=>q || i.level<=getMyLevel());
 
   if(quick==="__crops") rows = rows.filter(i=>CROP_MACHINES.includes(i.machine.toLowerCase()));
   else if(quick==="__animals") rows = rows.filter(i=>ANIMAL_MACHINES.includes(i.machine.toLowerCase()));
@@ -874,12 +902,16 @@ function renderBrowse(){
 
   $("#browseEmpty").classList.toggle("hide", rows.length>0);
 
-  const meta = i => `Lv ${i.level??"—"} · ${fmtTime(i.time_min)}`;
+  const meta = i => `${i.level>getMyLevel()?'<span class="locked-level">مقفل حتى مستوى '+i.level+'</span>':'Lv '+(i.level??"—")} · ${fmtTime(i.time_min)}`;
+  const machineBadge = i => {
+    const rep=machineRepresentative(i.machine);
+    return `<span class="chip machine-chip">${rep?thumb(rep.product,"machine-mini"):""}${esc(displayMachine(i.machine))}</span>`;
+  };
   const grouping = $("#groupBuildings").checked;
 
   if(!grouping){
     $("#browseBody").innerHTML = rows.map(i=>
-      itemRow(i, `<span class="chip">${esc(displayMachine(i.machine))}</span> · Lv ${i.level??"—"} · ${fmtTime(i.time_min)}`)
+      itemRow(i, `${machineBadge(i)} · ${meta(i)}`)
     ).join("");
     return;
   }
@@ -902,7 +934,7 @@ function renderBrowse(){
         <span class="grp-name">${esc(displayMachine(m))}</span>
         <span class="grp-count">${groups[m].length}</span>
       </button>
-      <div class="grp-body ${open?"":"hide"}">${groups[m].map(i=>itemRow(i, meta(i))).join("")}</div>
+      <div class="grp-body ${open?"":"hide"}">${groups[m].map(i=>itemRow(i, `${machineBadge(i)} · ${meta(i)}`)).join("")}</div>
     </div>`;
   }).join("");
 
@@ -2050,7 +2082,7 @@ loadData();
     const found=tasks.find(t=>t.name.toLowerCase()===name.toLowerCase()&&t.destination===dest&&t.status!=="completed");
     if(found)found.qty+=qty;
     else tasks.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),name,qty,done:0,status:"notStarted",destination:dest});
-    save();render();$("hdTaskName").value="";$("hdTaskQty").value="1";$("hdSuggestions").classList.add("hide");
+    save();$("hdStatusFilter").value="all";$("hdDestFilter").value="all";render();$("hdTaskName").value="";$("hdTaskQty").value="1";$("hdSuggestions").classList.add("hide");
   }
   function addFromBrowse(name,qty){add(name,qty,destinations[6]||destinations[0]);}
   function renderDest(){
@@ -2071,6 +2103,7 @@ loadData();
       return '<div class="hd-task '+(t.status==="completed"?'done':'')+'" data-task="'+esc(t.id)+'">'+
         '<div class="hd-tasktop">'+thumb(t.name,"hd-taskimg")+'<span class="hd-taskname">'+esc(displayName(t.name))+'</span><span class="hd-taskqty">'+digits(t.done||0)+' / '+digits(t.qty||1)+'</span></div>'+
         '<div class="hd-taskbottom"><span class="hd-state">'+st+'</span>'+
+        '<button class="hd-mini hd-check" data-action="complete" '+(t.status==="completed"?'disabled':'')+'>✓ تم</button>'+
         '<button class="hd-mini" data-action="minus" '+(Number(t.done||0)<=0?'disabled':'')+'>−1</button>'+
         '<button class="hd-mini" data-action="plus" '+(Number(t.done||0)>=Number(t.qty||1)?'disabled':'')+'>+1</button>'+
         '<select data-action="status" aria-label="Task status"><option value="notStarted" '+(t.status==="notStarted"?'selected':'')+'>Not started</option><option value="making" '+(t.status==="making"?'selected':'')+'>Making</option><option value="completed" '+(t.status==="completed"?'selected':'')+'>Completed</option></select>'+
@@ -2080,10 +2113,11 @@ loadData();
   }
   $("hdAddTask").addEventListener("click",()=>add($("hdTaskName").value,$("hdTaskQty").value));
   $("hdTaskName").addEventListener("input",()=>{
-    const q=$("hdTaskName").value.trim().toLowerCase(),box=$("hdSuggestions");
+    const q=$("hdTaskName").value.trim(),box=$("hdSuggestions");
     if(!q){box.classList.add("hide");return;}
-    const goods=(window.HAYDAY_GOODS?.items||[]).filter(x=>itemMatches(x,q)).slice(0,8);
-    box.innerHTML=goods.map(x=>'<div class="hd-suggestion" data-pick="'+esc(x.product)+'">'+thumb(x.product,"thumb-sm")+'<span>'+esc(x.ar||x.product)+' <small>'+esc(x.product)+' · Lv. '+digits(x.level)+'</small></span></div>').join("");
+    const goods=(window.HAYDAY_GOODS?.items||[]).filter(x=>itemMatches(x,q))
+      .sort((a,b)=>(a.level>getMyLevel())-(b.level>getMyLevel())||a.level-b.level).slice(0,12);
+    box.innerHTML=goods.map(x=>'<div class="hd-suggestion" data-pick="'+esc(x.product)+'">'+thumb(x.product,"thumb-sm")+'<span>'+esc(x.ar||displayName(x.product))+' <small>'+esc(x.product)+' · '+(x.level>getMyLevel()?'مقفل حتى مستوى '+digits(x.level):'مستوى '+digits(x.level))+'</small></span></div>').join("");
     box.classList.toggle("hide",!goods.length);
   });
   $("hdTaskName").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();add($("hdTaskName").value,$("hdTaskQty").value);}});
@@ -2096,6 +2130,7 @@ loadData();
     const card=b.closest("[data-task]"),t=tasks.find(x=>x.id===card?.dataset.task);if(!t)return;
     if(b.dataset.action==="plus")t.done=Math.min(Number(t.qty),Number(t.done||0)+1);
     if(b.dataset.action==="minus")t.done=Math.max(0,Number(t.done||0)-1);
+    if(b.dataset.action==="complete"){t.done=Number(t.qty||1);t.status="completed";}
     if(b.dataset.action==="delete"){tasks=tasks.filter(x=>x.id!==t.id);}
     if(b.dataset.action==="plus"||b.dataset.action==="minus")t.status=t.done>=Number(t.qty)?"completed":(t.done>0&&t.status==="completed"?"making":t.status);
     save();render();
