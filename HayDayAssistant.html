@@ -24,7 +24,7 @@
     --radius:18px; --tabh:60px;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;height:100%}
+  html,body{margin:0;height:100%;direction:rtl}body{direction:rtl;text-align:right}.row,.item-row,.grp-head,.appbar,.tabbar{direction:rtl}select{background-position:left 11px center;padding-left:32px;padding-right:12px}input[type=number]{direction:ltr}
   body{
     font-family:-apple-system,BlinkMacSystemFont,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     color:var(--ink); background:#d7e3ca; line-height:1.4; -webkit-text-size-adjust:100%;
@@ -48,7 +48,7 @@
     border-bottom:1px solid var(--line);
   }
   .appbar .logo-img{height:42px;width:auto;flex:0 0 auto;display:block}
-  .appbar .ttl{min-width:0;flex:1}
+  .appbar .ttl{min-width:0;flex:1}.level-box{display:flex;flex-direction:column;align-items:center;gap:2px;flex:0 0 auto;font-size:10px;font-weight:800;color:var(--leaf-d);white-space:nowrap}.level-box input{width:48px;min-height:32px;height:32px;padding:3px 4px;text-align:center;font-size:14px;font-weight:800;border-radius:9px}
   .appbar h1{font-size:19px;margin:0;letter-spacing:-.3px;line-height:1.05}
   .appbar h1 .t{color:var(--gold)}
   .appbar .sub{margin:2px 0 0;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -337,7 +337,7 @@
 
   <header class="appbar">
       <img class="logo-img" src="assets/wordmark.png?v=3" alt="HayDay Tool" width="59" height="42">
-      <div class="ttl"><div class="sub">Live farm data &amp; planner</div></div>
+      <div class="ttl"><div class="sub">مساعد مزرعتك في هاي داي</div></div><label class="level-box">مستواك<input id="myLevel" type="number" min="1" max="126" value="126" inputmode="numeric" aria-label="مستواك"></label>
       <button class="iconbtn" id="helpBtn" title="How this page works" aria-label="Help">
         <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
       </button>
@@ -350,14 +350,14 @@
   <!-- BROWSE -->
   <section id="tab-browse">
     <div class="card">
-      <input class="search" id="q" type="search" placeholder="Search items or machines…" style="width:100%">
+      <input class="search" id="q" type="search" placeholder="ابحث عن منتج أو جهاز…" style="width:100%">
       <div class="row" style="margin-top:8px">
         <select id="quick" style="flex:1 1 44%">
-          <option value="">All items</option>
-          <option value="__crops">🌾 Crops &amp; trees</option>
-          <option value="__animals">🐄 Animal products</option>
+          <option value="">كل المنتجات</option>
+          <option value="__crops">🌾 المحاصيل والأشجار</option>
+          <option value="__animals">🐄 منتجات الحيوانات</option>
         </select>
-        <select id="machineFilter" style="flex:1 1 44%"><option value="">All machines</option></select>
+        <select id="machineFilter" style="flex:1 1 44%"><option value="">كل الأجهزة</option></select>
         <select id="sort" style="flex:1 1 100%">
           <option value="profit_per_hour|-1">Sort: Profit/hr (high→low)</option>
           <option value="level|1">Sort: Level (low→high)</option>
@@ -369,7 +369,7 @@
       </div>
       <div class="row" style="margin-top:8px;align-items:center;justify-content:space-between">
         <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer">
-          <input type="checkbox" id="groupBuildings" checked style="width:16px;height:16px"> Group by building
+          <input type="checkbox" id="groupBuildings" checked style="width:16px;height:16px"> تجميع حسب الجهاز
         </label>
         <button class="btn-sm" id="toggleAllGroups" type="button">Collapse all</button>
       </div>
@@ -383,14 +383,14 @@
   <!-- PROFIT -->
   <section id="tab-profit" class="hide">
     <div class="card">
-      <h2>Best profit per hour</h2>
+      <h2>أفضل المنتجات ربحًا في الساعة</h2>
       <p class="sub">Rank items by profit/hour. Narrow by level range or machine — e.g. the best crop you can grow up to level 15.</p>
       <div class="row">
         <label class="fld">Show top<input type="number" id="pLimit" value="15" min="1" max="100"></label>
         <label class="fld">Min level<input type="number" id="pMin" value="1" min="1"></label>
         <label class="fld">Max level<input type="number" id="pMax" placeholder="any" min="1"></label>
         <label class="fld" style="flex:1;min-width:150px">Machine
-          <select id="pMachine"><option value="">Any machine</option></select>
+          <select id="pMachine"><option value="">أي جهاز</option></select>
         </label>
       </div>
     </div>
@@ -402,7 +402,7 @@
   <!-- UNLOCKS -->
   <section id="tab-unlocks" class="hide">
     <div class="card">
-      <h2>What unlocks at a level</h2>
+      <h2>المنتجات التي تُفتح حسب المستوى</h2>
       <p class="sub">See exactly what opens up at a level, or everything available up to it.</p>
       <div class="row">
         <label class="fld">Level<input type="number" id="uLevel" value="20" min="1"></label>
@@ -419,7 +419,7 @@
   <!-- PLANNER -->
   <section id="tab-planner" class="hide">
     <div class="card">
-      <h2>Recipe planner</h2>
+      <h2>مخطط الوصفات</h2>
       <p class="sub">Add what you want to make and see every raw ingredient still to gather — it subtracts what's already in your inventory — with the barn &amp; silo space it takes.</p>
       <div class="row">
         <div class="ac search" style="flex:1 1 180px;min-width:140px">
@@ -451,7 +451,7 @@
   <!-- INVENTORY -->
   <section id="tab-inventory" class="hide">
     <div class="card">
-      <h2>My inventory</h2>
+      <h2>مخزوني</h2>
       <p class="sub">Snap your barn and silo, then let AI read them straight into your inventory. Saved in this browser.</p>
       <div class="shots" id="shotStrip"></div>
       <input type="file" id="shotInput" accept="image/*" multiple hidden>
@@ -490,7 +490,7 @@
 
   <section id="tab-list" class="hide">
     <div id="hdTodo" class="card">
-      <div class="hd-head"><div><h2>🧾 My Orders</h2><p class="sub">Track what you need to make and collect.</p></div><span id="hdTodoCount" class="hd-pill">0 tasks</span></div>
+      <div class="hd-head"><div><h2>🧾 طلباتي</h2><p class="sub">Track what you need to make and collect.</p></div><span id="hdTodoCount" class="hd-pill">0 tasks</span></div>
       <div class="hd-addrow">
         <input id="hdTaskName" type="search" placeholder="Search or type a product…" autocomplete="off">
         <input id="hdTaskQty" type="number" min="1" value="1" aria-label="Quantity">
@@ -559,17 +559,17 @@
 
   <nav class="tabbar" id="tabs">
     <button data-tab="browse" class="active">
-      <span class="ico"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>Browse</button>
+      <span class="ico"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>المنتجات</button>
     <button data-tab="profit">
-      <span class="ico"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v5h-5"/></svg></span>Profit</button>
+      <span class="ico"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M21 7v5h-5"/></svg></span>الأرباح</button>
     <button data-tab="unlocks">
-      <span class="ico"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.6-1.7"/></svg></span>Unlocks</button>
+      <span class="ico"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.6-1.7"/></svg></span>المستويات</button>
     <button data-tab="planner">
-      <span class="ico"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h3M13 11h3M8 15h3M13 15h3"/></svg></span>Planner</button>
+      <span class="ico"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h3M13 11h3M8 15h3M13 15h3"/></svg></span>الوصفات</button>
     <button data-tab="inventory">
-      <span class="ico"><svg viewBox="0 0 24 24"><path d="M3 9l9-5 9 5v6l-9 5-9-5V9z"/><path d="M3 9l9 5 9-5"/><path d="M12 14v6"/></svg></span>Inventory<span class="badge" id="invCount"></span></button>
+      <span class="ico"><svg viewBox="0 0 24 24"><path d="M3 9l9-5 9 5v6l-9 5-9-5V9z"/><path d="M3 9l9 5 9-5"/><path d="M12 14v6"/></svg></span>المخزون<span class="badge" id="invCount"></span></button>
     <button data-tab="list">
-      <span class="ico"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg></span>My Orders<span class="badge" id="listCount"></span></button>
+      <span class="ico"><svg viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg></span>طلباتي<span class="badge" id="listCount"></span></button>
   </nav>
 </div>
 
@@ -684,17 +684,19 @@ let NAME_IMG = {};       // product name (lowercase) -> thumbnail filename, from
 function thumb(name, cls){
   const f = NAME_IMG[String(name||"").toLowerCase()];
   if(!f) return "";
-  return `<img class="${cls||"thumb"}" src="https://raw.githubusercontent.com/Mohammad-Alharbi12/HayDayTool/main/assets/items/${encodeURIComponent(f)}" alt="${esc(name)}" loading="lazy" decoding="async">`;
+  return `<img class="${cls||"thumb"}" src="https://raw.githubusercontent.com/Mohammad-Alharbi12/HayDayTool/main/assets/items/${encodeURIComponent(f)}" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/Mohammad-Alharbi12/HayDayTool@main/assets/items/${encodeURIComponent(f)}'" alt="${esc(name)}" loading="lazy" decoding="async">`;
 }
 let planTargets = loadPlan();    // [{name, qty}] — persisted across reloads
 
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const clean = v => typeof v === "string" ? v.replace(ZW, "").trim() : v;
+const LEVEL_KEY="haydaytool.myLevel";function getMyLevel(){const n=Number(localStorage.getItem(LEVEL_KEY));return Number.isFinite(n)&&n>=1?Math.min(126,n):126;}function setMyLevel(v){const n=Math.max(1,Math.min(126,Math.floor(Number(v)||1)));localStorage.setItem(LEVEL_KEY,String(n));renderBrowse();renderProfit();fillMachineSelects();}
 const storageOf = m => CROP_MACHINES.includes(String(m||"").toLowerCase()) ? "silo" : "barn";
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 /* ----------------------------- data loading ------------------------------- */
+document.addEventListener("DOMContentLoaded",()=>{const e=document.querySelector("#myLevel");if(e){e.value=getMyLevel();e.addEventListener("change",()=>setMyLevel(e.value));}});
 function normalize(a){
   return a.map(r => ({
     product: clean(r.product), ar: clean(r.ar || r.product), machine: clean(r.machine),
@@ -816,7 +818,7 @@ function displayMachine(name){return MACHINE_AR[name]||name;}
 function normalizeSearch(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f\\u064B-\\u065F\\u0670\\u0640]/g,'').replace(/[أإآٱ]/g,'ا').replace(/[ىي]/g,'ي').replace(/ة/g,'ه').replace(/^ال/,'').replace(/\\s+/g,' ').trim();}
 function itemMatches(i,q){const n=normalizeSearch(q);return [i.product,i.ar,i.machine].some(v=>normalizeSearch(v).includes(n));}
 function fillMachineSelects(){
-  const opts = machines().map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join("");
+  const opts = machines().filter(m=>DATA.some(i=>i.machine===m&&i.level<=getMyLevel())).map(m=>`<option value="${esc(m)}">${esc(displayMachine(m))}</option>`).join("");
   for(const id of ["#machineFilter","#pMachine"]){
     const el = $(id), cur = el.value;
     el.innerHTML = (id==="#machineFilter"?'<option value="">All machines</option>':'<option value="">Any machine</option>') + opts;
@@ -847,7 +849,7 @@ function renderBrowse(){
   const q = $("#q").value.trim().toLowerCase();
   const mf = $("#machineFilter").value.toLowerCase();
   const quick = $("#quick").value;
-  let rows = DATA.slice();
+  let rows = DATA.filter(i=>i.level<=getMyLevel());
 
   if(quick==="__crops") rows = rows.filter(i=>CROP_MACHINES.includes(i.machine.toLowerCase()));
   else if(quick==="__animals") rows = rows.filter(i=>ANIMAL_MACHINES.includes(i.machine.toLowerCase()));
@@ -899,7 +901,7 @@ function renderBrowse(){
 
   // Keep the expand/collapse-all button label in sync.
   const allCollapsed = names.length>0 && names.every(m=>collapsedGroups.has(m));
-  $("#toggleAllGroups").textContent = allCollapsed ? "Expand all" : "Collapse all";
+  $("#toggleAllGroups").textContent = allCollapsed ? "توسيع الكل" : "طي الكل";
 }
 
 /* ----------------------------- PROFIT ------------------------------------- */
@@ -909,7 +911,7 @@ function renderProfit(){
   const min = +$("#pMin").value || 1;
   const max = $("#pMax").value ? +$("#pMax").value : Infinity;
   const mac = $("#pMachine").value.toLowerCase();
-  let rows = DATA.filter(i=>typeof i.profit_per_hour==="number" && i.level>=min && i.level<=max);
+  let rows = DATA.filter(i=>typeof i.profit_per_hour==="number" && i.level>=min && i.level<=max && i.level<=getMyLevel());
   if(mac) rows = rows.filter(i=>i.machine.toLowerCase()===mac);
   rows.sort((a,b)=>b.profit_per_hour-a.profit_per_hour);
   rows = rows.slice(0, limit);
