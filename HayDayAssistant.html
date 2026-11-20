@@ -324,17 +324,16 @@
   #hdTodo .hd-suggestion{display:flex;align-items:center;gap:8px}
   #hdTodo .hd-suggestion .thumb-sm{width:30px;height:30px;flex:0 0 30px}
   #hdTodo .hd-taskname{font-weight:750;flex:1;min-width:0;overflow-wrap:anywhere}
-  #hdTodo .hd-check{background:#edf7e8;border-color:#b9d8aa;color:#246026}
-  #hdTodo .hd-check:disabled{opacity:.55}
   .locked-level{display:inline-block;background:#fff2d8;color:#8a5a00;border-radius:7px;padding:2px 6px;font-weight:800;font-size:10px}
-  .machine-chip{display:inline-flex;align-items:center;gap:4px}
-  .machine-mini{width:22px;height:22px;object-fit:contain;vertical-align:middle;border-radius:5px;background:#f4f8ef}
+  .machine-chip{display:inline-flex;align-items:center;gap:6px}
+  .machine-icon{width:34px;height:34px;object-fit:contain;flex:0 0 34px;display:inline-block;background:transparent;border:0;padding:0}
   #hdTodo .hd-taskqty{font-variant-numeric:tabular-nums;font-weight:800;color:var(--leaf-d);white-space:nowrap}
   #hdTodo .hd-taskbottom{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:9px}
   #hdTodo .hd-taskbottom select{min-height:34px;padding:5px 24px 5px 8px;font-size:12px;flex:1;min-width:105px}
   #hdTodo .hd-mini{border:1px solid var(--line);background:#f8fbf4;border-radius:8px;padding:6px 9px;font-weight:800;color:var(--leaf-d);min-height:32px}
   #hdTodo .hd-delete{color:var(--danger);background:#fff7f5}
   #hdTodo .hd-state{font-size:11px;font-weight:800;color:var(--muted);background:#f3f5ef;padding:4px 7px;border-radius:8px}
+  #hdTodo .hd-progress{font-size:11px;color:var(--muted);font-weight:700}
   #hdTodo .hd-empty{text-align:center;color:var(--muted);padding:22px 8px;font-size:13px}
   #hdTodo .hd-foot{text-align:center;color:var(--muted);font-size:11px;margin-top:14px}
 
@@ -509,8 +508,6 @@
         <select id="hdStatusFilter"><option value="all">All statuses</option><option value="notStarted">Not started</option><option value="making">Making</option><option value="completed">Completed</option></select>
         <select id="hdDestFilter"><option value="all">All destinations</option></select>
       </div>
-      <div class="hd-dest-head"><b>Destinations</b><button class="btn sm" id="hdAddDest">＋ Add destination</button></div>
-      <div id="hdDestinations" class="hd-destinations"></div>
       <div id="hdTasks"></div>
       <div class="hd-foot">Your orders are saved on this device.</div>
     </div>
@@ -847,8 +844,30 @@ function itemMatches(i,q){
   const id=NAME_TO_ID[String(i.product||"").toLowerCase()];
   return recipeHasIngredient(id,n);
 }
-function machineRepresentative(machine){
-  return DATA.filter(x=>x.machine===machine&&x.img).sort((a,b)=>(a.level||999)-(b.level||999))[0]||null;
+const MACHINE_IMAGE_FILES={
+  "Bakery":"Bakery.png","Feed Mill":"Feed Mill.png","Dairy":"Dairy.png","Sugar Mill":"Sugar Mill.png",
+  "Popcorn Pot":"Popcorn Pot.png","BBQ Grill":"BBQ Grill.png","Pie Oven":"Pie Oven.png","Loom":"Loom.png",
+  "Sewing Machine":"Sewing Machine.png","Cake Oven":"Cake Oven.png","Mine":"Mine.png","Smelter":"Smelter.png",
+  "Juice Press":"Juice Press.png","Lure Workbench":"Lure Workbench.png","Ice Cream Maker":"Ice Cream Maker.png",
+  "Net Maker":"Net Maker.png","Doner Kebab Stand":"Doner Kebab Stand.png","Jam Maker":"Jam Maker.png",
+  "Jeweler":"Jeweler.png","Honey Extractor":"Honey Extractor.png","Coffee Kiosk":"Coffee Kiosk.png",
+  "Soup Kitchen":"Soup Kitchen.png","Candle Maker":"Candle Maker.png","Flower Shop":"Flower Shop.png",
+  "Duck Salon":"Duck Salon Stage6.png","Candy Machine":"Candy Machine.png","Sauce Maker":"Sauce Maker.png",
+  "Sushi Bar":"Sushi Bar.png","Salad Bar":"Salad Bar.png","Sandwich Bar":"Sandwich Bar.png",
+  "Smoothie Mixer":"Smoothie Mixer.png","Pasta Maker":"Pasta Maker.png","Essential Oils Lab":"Essential Oils Lab.png",
+  "Wok Kitchen":"Wok Kitchen.png","Hat Maker":"Hat Maker.png","Pasta Kitchen":"Pasta Kitchen.png",
+  "Hot Dog Stand":"Hot Dog Stand.png","Donut Maker":"Donut Maker.png","Taco Kitchen":"Taco Kitchen.png",
+  "Omelet Station":"Omelet Station.png","Tea Stand":"Tea Stand.png","Fondue Pot":"Fondue Pot.png",
+  "Bath Kiosk":"Bath Kiosk.png","Deep Fryer":"Deep Fryer.png","Preservation Station":"Preservation Station.png",
+  "Pottery Studio":"Pottery Studio.png","Fudge Shop":"Fudge Shop.png","Yogurt Maker":"Yogurt Maker.png",
+  "Stew Pot":"Stew Pot.png","Cupcake Maker":"Cupcake Maker.png","Perfumerie":"Perfumerie.png",
+  "Waffle Maker":"Waffle Maker.png","Porridge Bar":"Porridge Bar.png","Milkshake Bar":"Milkshake Bar.png"
+};
+function machineThumb(machine){
+  const file=MACHINE_IMAGE_FILES[machine];
+  if(!file) return "";
+  const url="https://hayday.fandom.com/wiki/Special:FilePath/"+encodeURIComponent(file);
+  return `<img class="machine-icon" src="${url}" alt="${esc(displayMachine(machine))}" loading="lazy" decoding="async" onerror="this.onerror=null;this.hidden=true">`;
 }
 function fillMachineSelects(){
   const opts = machines().filter(m=>DATA.some(i=>i.machine===m&&i.level<=getMyLevel())).map(m=>`<option value="${esc(m)}">${esc(displayMachine(m))}</option>`).join("");
@@ -903,10 +922,7 @@ function renderBrowse(){
   $("#browseEmpty").classList.toggle("hide", rows.length>0);
 
   const meta = i => `${i.level>getMyLevel()?'<span class="locked-level">مقفل حتى مستوى '+i.level+'</span>':'Lv '+(i.level??"—")} · ${fmtTime(i.time_min)}`;
-  const machineBadge = i => {
-    const rep=machineRepresentative(i.machine);
-    return `<span class="chip machine-chip">${rep?thumb(rep.product,"machine-mini"):""}${esc(displayMachine(i.machine))}</span>`;
-  };
+  const machineBadge = i => `<span class="chip machine-chip">${machineThumb(i.machine)}${esc(displayMachine(i.machine))}</span>`;
   const grouping = $("#groupBuildings").checked;
 
   if(!grouping){
@@ -2067,8 +2083,19 @@ loadData();
   const KEY="hayday_tasks", DESTKEY="hayday_destinations";
   const defaults=["🚢 السفينة","🚚 الشاحنة","🏘️ البلدة","🏡 زوار المزرعة","🦊 حديقة الحيوان","🏆 الديربي","📦 أخرى"];
   const $=id=>document.getElementById(id);
-  let tasks=[], destinations=defaults.slice(), selectedIndex=-1;
-  try{tasks=JSON.parse(localStorage.getItem(KEY)||"[]");if(!Array.isArray(tasks))tasks=[];}catch(e){tasks=[];}
+  let tasks=[], destinations=defaults.slice();
+  try{
+    tasks=JSON.parse(localStorage.getItem(KEY)||"[]");
+    if(!Array.isArray(tasks))tasks=[];
+    tasks=tasks.map(t=>{
+      const qty=Math.max(1,Number(t.qty)||1),done=Math.max(0,Math.min(qty,Number(t.done)||0));
+      let status=t.status||"notStarted";
+      if(status==="completed"||done>=qty){status="completed";}
+      else if(status==="making"||done>0){status="making";}
+      else{status="notStarted";}
+      return {...t,qty,done,status,destination:t.destination||defaults[6]};
+    });
+  }catch(e){tasks=[];}
   try{const d=JSON.parse(localStorage.getItem(DESTKEY)||"null");if(Array.isArray(d)&&d.length)destinations=[...new Set([...defaults,...d])];}catch(e){}
   const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(tasks));localStorage.setItem(DESTKEY,JSON.stringify(destinations));}catch(e){}};
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -2086,9 +2113,8 @@ loadData();
   }
   function addFromBrowse(name,qty){add(name,qty,destinations[6]||destinations[0]);}
   function renderDest(){
-    $("hdDestinations").innerHTML=destinations.map((d,i)=>'<span class="hd-dest">'+esc(d)+(i>=defaults.length?'<button data-remove-dest="'+i+'" aria-label="Remove destination">×</button>':'')+'</span>').join("");
     const sel=$("hdDestFilter"),old=sel.value;
-    sel.innerHTML='<option value="all">All destinations</option>'+destinations.map(d=>'<option value="'+esc(d)+'">'+esc(d)+'</option>').join("");
+    sel.innerHTML='<option value="all">كل الوجهات</option>'+destinations.map(d=>'<option value="'+esc(d)+'">'+esc(d)+'</option>').join("");
     if([...sel.options].some(o=>o.value===old))sel.value=old;
   }
   function render(){
@@ -2099,16 +2125,16 @@ loadData();
     $("hdTodoCount").textContent=digits(tasks.length)+" tasks";
     $("hdTasks").innerHTML=visible.length?visible.map(t=>{
       const left=Math.max(0,Number(t.qty||1)-Number(t.done||0));
-      const st=t.status==="completed"?"Completed":t.status==="making"?"Making":"Not started";
+      const st=t.status==="completed"?"مكتمل":t.status==="making"?"قيد التجهيز":"غير مكتمل";
       return '<div class="hd-task '+(t.status==="completed"?'done':'')+'" data-task="'+esc(t.id)+'">'+
         '<div class="hd-tasktop">'+thumb(t.name,"hd-taskimg")+'<span class="hd-taskname">'+esc(displayName(t.name))+'</span><span class="hd-taskqty">'+digits(t.done||0)+' / '+digits(t.qty||1)+'</span></div>'+
         '<div class="hd-taskbottom"><span class="hd-state">'+st+'</span>'+
-        '<button class="hd-mini hd-check" data-action="complete" '+(t.status==="completed"?'disabled':'')+'>✓ تم</button>'+
+        '<span class="hd-progress">المتبقي '+digits(left)+'</span>'+
         '<button class="hd-mini" data-action="minus" '+(Number(t.done||0)<=0?'disabled':'')+'>−1</button>'+
-        '<button class="hd-mini" data-action="plus" '+(Number(t.done||0)>=Number(t.qty||1)?'disabled':'')+'>+1</button>'+
-        '<select data-action="status" aria-label="Task status"><option value="notStarted" '+(t.status==="notStarted"?'selected':'')+'>Not started</option><option value="making" '+(t.status==="making"?'selected':'')+'>Making</option><option value="completed" '+(t.status==="completed"?'selected':'')+'>Completed</option></select>'+
-        '<select data-action="destination" aria-label="Destination">'+destinations.map(d=>'<option '+(d===t.destination?'selected':'')+' value="'+esc(d)+'">'+esc(d)+'</option>').join("")+'</select>'+
-        '<button class="hd-mini hd-delete" data-action="delete">Delete</button></div></div>';
+        '<button class="hd-mini" data-action="plus" '+(Number(t.done||0)>=Number(t.qty||1)?'disabled':'')+'>مكتمل +1</button>'+
+        '<select data-action="status" aria-label="حالة الطلب"><option value="notStarted" '+(t.status==="notStarted"?'selected':'')+'>غير مكتمل</option><option value="making" '+(t.status==="making"?'selected':'')+'>قيد التجهيز</option><option value="completed" '+(t.status==="completed"?'selected':'')+'>مكتمل</option></select>'+
+        '<select data-action="destination" aria-label="الوجهة">'+destinations.map(d=>'<option '+(d===t.destination?'selected':'')+' value="'+esc(d)+'">'+esc(d)+'</option>').join("")+'</select>'+
+        '<button class="hd-mini hd-delete" data-action="delete">حذف</button></div></div>';
     }).join(""):'<div class="hd-empty">No tasks here yet. Add a product above or use + List in Browse.</div>';
   }
   $("hdAddTask").addEventListener("click",()=>add($("hdTaskName").value,$("hdTaskQty").value));
@@ -2123,22 +2149,26 @@ loadData();
   $("hdTaskName").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();add($("hdTaskName").value,$("hdTaskQty").value);}});
   $("hdSuggestions").addEventListener("click",e=>{const x=e.target.closest("[data-pick]");if(x){$("hdTaskName").value=x.dataset.pick;$("hdSuggestions").classList.add("hide");}});
   $("hdStatusFilter").addEventListener("change",render);$("hdDestFilter").addEventListener("change",render);
-  $("hdAddDest").addEventListener("click",()=>{const name=prompt("New destination name:");if(name&&name.trim()&&!destinations.includes(name.trim())){destinations.push(name.trim());save();render();}});
-  $("hdDestinations").addEventListener("click",e=>{const b=e.target.closest("[data-remove-dest]");if(!b)return;const i=Number(b.dataset.removeDest),removed=destinations[i];if(!removed)return;destinations.splice(i,1);tasks.forEach(t=>{if(t.destination===removed)t.destination=destinations[6]||destinations[0];});save();render();});
   $("hdTasks").addEventListener("click",e=>{
     const b=e.target.closest("[data-action]");if(!b)return;
     const card=b.closest("[data-task]"),t=tasks.find(x=>x.id===card?.dataset.task);if(!t)return;
     if(b.dataset.action==="plus")t.done=Math.min(Number(t.qty),Number(t.done||0)+1);
     if(b.dataset.action==="minus")t.done=Math.max(0,Number(t.done||0)-1);
-    if(b.dataset.action==="complete"){t.done=Number(t.qty||1);t.status="completed";}
     if(b.dataset.action==="delete"){tasks=tasks.filter(x=>x.id!==t.id);}
-    if(b.dataset.action==="plus"||b.dataset.action==="minus")t.status=t.done>=Number(t.qty)?"completed":(t.done>0&&t.status==="completed"?"making":t.status);
+    if(b.dataset.action==="plus"||b.dataset.action==="minus"){
+      t.status=t.done>=Number(t.qty)?"completed":(t.done>0?"making":"notStarted");
+    }
     save();render();
   });
   $("hdTasks").addEventListener("change",e=>{
     const el=e.target.closest("[data-action]");if(!el)return;
     const t=tasks.find(x=>x.id===el.closest("[data-task]")?.dataset.task);if(!t)return;
-    if(el.dataset.action==="status"){t.status=el.value;if(el.value==="completed")t.done=Number(t.qty);else if(t.done>=Number(t.qty))t.done=Math.max(0,Number(t.qty)-1);}
+    if(el.dataset.action==="status"){
+      t.status=el.value;
+      if(el.value==="completed")t.done=Number(t.qty);
+      else if(el.value==="notStarted")t.done=0;
+      else if(t.done<=0)t.done=Math.min(1,Number(t.qty)-1);
+    }
     if(el.dataset.action==="destination")t.destination=el.value;
     save();render();
   });
