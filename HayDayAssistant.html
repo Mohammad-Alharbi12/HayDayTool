@@ -2119,7 +2119,7 @@ loadData();
   }catch(e){tasks=[];}
   try{
     const savedDest=JSON.parse(localStorage.getItem(DESTKEY)||"null");
-    if(Array.isArray(savedDest))destinations=[...new Set([...defaults,...savedDest.map(String)])];
+    if(Array.isArray(savedDest))destinations=[...new Set([...defaults,...savedDest.map(String),...tasks.map(t=>String(t.destination||""))])];
   }catch(e){}
   function save(){
     try{localStorage.setItem(KEY,JSON.stringify(tasks));localStorage.setItem(DESTKEY,JSON.stringify(destinations));}
@@ -2205,7 +2205,6 @@ loadData();
   });
   window.HD_TODO={addFromBrowse,render};
   save();render();
-})();
 })();
 })();
 </script>
