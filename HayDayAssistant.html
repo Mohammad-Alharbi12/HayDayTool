@@ -980,7 +980,7 @@ function renderBrowse(){
     return `<div class="grp">
       <button class="grp-head ${open?"open":""}" data-grp="${esc(m)}">
         <span class="chev">▸</span>
-        <span class="grp-name">${esc(displayMachine(m))}</span>
+        <span class="grp-name">${machineThumb(m)}${esc(displayMachine(m))}</span>
         <span class="grp-count">${groups[m].length}</span>
       </button>
       <div class="grp-body ${open?"":"hide"}">${groups[m].map(i=>itemRow(i, `${machineBadge(i)} · ${meta(i)}`)).join("")}</div>
@@ -1009,7 +1009,7 @@ function renderProfit(){
       ${thumb(i.product)}
       <div class="ir-main">
         <div class="ir-name">${esc(displayName(i.product))}</div>
-        <div class="ir-meta"><span class="chip">${esc(i.machine)}</span> · Lv ${i.level??"—"} · ${fmtNum(i.xp_per_hour)} xp/hr</div>
+        <div class="ir-meta"><span class="chip">${machineThumb(i.machine)}${esc(displayMachine(i.machine))}</span> · Lv ${i.level??"—"} · ${fmtNum(i.xp_per_hour)} xp/hr</div>
       </div>
       <div class="ir-prof ${profCls(i.profit_per_hour)}">${profNum(i.profit_per_hour)}<small>coin/hr</small></div>
       <button class="addbtn add" data-p="${esc(i.product)}" aria-label="Add to list">+</button>
@@ -1024,7 +1024,7 @@ function renderUnlocks(mode){
     : DATA.filter(i=>i.level===lvl).sort((a,b)=>a.product.localeCompare(b.product));
   $("#unlockEmpty").classList.toggle("hide", rows.length>0);
   $("#unlockBody").innerHTML = rows.map(i=>
-    itemRow(i, `<span class="chip">${esc(i.machine)}</span> · Lv ${i.level} · ${fmtNum(i.price)} coins`)
+    itemRow(i, `<span class="chip">${machineThumb(i.machine)}${esc(displayMachine(i.machine))}</span> · Lv ${i.level} · ${fmtNum(i.price)} coins`)
   ).join("");
 }
 
@@ -1864,7 +1864,7 @@ function attachAC(inputSel, menuSel, onEnter){
     menu.innerHTML = items.map((n,i)=>
       `<div class="ac-item${i===active?' active':''}" data-i="${i}">
          <span>${esc(displayName(n))} <small class="ac-en">${esc(n)}</small></span>
-         <span class="ac-mac">${esc(machineOf(n))}</span>
+         <span class="ac-mac">${machineThumb(machineOf(n))}${esc(displayMachine(machineOf(n)))}</span>
        </div>`).join("");
   }
   function show(){
@@ -1910,7 +1910,7 @@ function attachSwapAC(input, onChoose, onCancel){
     for(const n of ITEM_NAMES){const it=DATA.find(x=>x.product===n);if(!it)continue;const hit=normalizeSearch(n).includes(ql)||normalizeSearch(it.ar).includes(ql);if(hit){if(normalizeSearch(it.ar).startsWith(ql)||normalizeSearch(n).startsWith(ql))starts.push(n);else incl.push(n);}}
     items = starts.concat(incl).slice(0,8); }
   function paint(){ menu.innerHTML = items.map((n,i)=>
-    `<div class="ac-item${i===active?' active':''}" data-i="${i}"><span>${esc(displayName(n))} <small class="ac-en">${esc(n)}</small></span><span class="ac-mac">${esc(displayMachine(machineOf(n)))}</span></div>`).join(""); }
+    `<div class="ac-item${i===active?' active':''}" data-i="${i}"><span>${esc(displayName(n))} <small class="ac-en">${esc(n)}</small></span><span class="ac-mac">${machineThumb(machineOf(n))}${esc(displayMachine(machineOf(n)))}</span></div>`).join(""); }
   function show(){ const q=input.value.trim();
     if(q.length<1||!ITEM_NAMES.length){ close(); return; }
     build(q); if(!items.length){ close(); return; }
@@ -2170,7 +2170,7 @@ loadData();
     const machine=$("hdAddMachine").value;
     const list=goods().filter(x=>(!machine||x.machine===machine)&&itemMatches(x,q))
       .sort((a,b)=>(a.level>getMyLevel())-(b.level>getMyLevel())||a.level-b.level).slice(0,12);
-    box.innerHTML=list.map(x=>'<div class="hd-suggestion" data-pick="'+esc(x.product)+'" data-machine="'+esc(x.machine||"")+'">'+thumb(x.product,"thumb-sm")+'<span>'+esc(x.ar||displayName(x.product))+' <small>'+esc(x.machine||"")+' · '+(x.level>getMyLevel()?'مقفل حتى مستوى '+digits(x.level):'مستوى '+digits(x.level))+'</small></span></div>').join("");
+    box.innerHTML=list.map(x=>'<div class="hd-suggestion" data-pick="'+esc(x.product)+'" data-machine="'+esc(x.machine||"")+'">'+thumb(x.product,"thumb-sm")+'<span>'+esc(x.ar||displayName(x.product))+' <small>'+machineThumb(x.machine||"")+esc(displayMachine(x.machine||""))+' · '+(x.level>getMyLevel()?'مقفل حتى مستوى '+digits(x.level):'مستوى '+digits(x.level))+'</small></span></div>').join("");
     box.classList.toggle("hide",!list.length);
   }
   function add(name,qty=1){
@@ -2195,7 +2195,7 @@ loadData();
       '<div class="hd-metric making"><small>قيد التجهيز</small><input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" value="'+(t.making?digits(t.making):'')+'" placeholder="0" data-action="making" aria-label="قيد التجهيز"></div>'+
       '<div class="hd-metric completed"><small>مكتمل</small><strong>'+digits(t.completed)+'</strong></div>'+
       '</div></div>'+
-      '<div class="hd-taskmeta"><select data-action="destination" aria-label="وجهة الطلب">'+destinations.map(d=>'<option value="'+esc(d)+'" '+(d===t.destination?'selected':'')+'>'+esc(d)+'</option>').join("")+'</select><span class="hd-machine">'+esc(machine||"كل الآلات")+'</span><button class="hd-delete" type="button" data-action="delete">حذف</button><div class="hd-complete-control"><button class="hd-step minus" type="button" data-action="complete-minus" '+(t.completed<=0?'disabled':'')+' aria-label="إنقاص المكتمل">−</button><button class="hd-step plus" type="button" data-action="complete-plus" '+(t.completed>=t.qty?'disabled':'')+' aria-label="زيادة المكتمل">+</button></div></div></div>';
+      '<div class="hd-taskmeta"><select data-action="destination" aria-label="وجهة الطلب">'+destinations.map(d=>'<option value="'+esc(d)+'" '+(d===t.destination?'selected':'')+'>'+esc(d)+'</option>').join("")+'</select><span class="hd-machine">'+(machine?machineThumb(machine)+esc(displayMachine(machine)):"كل الآلات")+'</span><button class="hd-delete" type="button" data-action="delete">حذف</button><div class="hd-complete-control"><button class="hd-step minus" type="button" data-action="complete-minus" '+(t.completed<=0?'disabled':'')+' aria-label="إنقاص المكتمل">−</button><button class="hd-step plus" type="button" data-action="complete-plus" '+(t.completed>=t.qty?'disabled':'')+' aria-label="زيادة المكتمل">+</button></div></div></div>';
   }
   function render(){
     $("hdTodoCount").textContent=digits(tasks.length)+" طلب";
