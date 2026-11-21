@@ -734,7 +734,7 @@ function thumb(name, cls){
   const pages="https://mohammad-alharbi12.github.io/HayDayTool/assets/items/"+file;
   const cdn="https://cdn.jsdelivr.net/gh/Mohammad-Alharbi12/HayDayTool@main/assets/items/"+file;
   const raw="https://raw.githubusercontent.com/Mohammad-Alharbi12/HayDayTool/main/assets/items/"+file;
-  return `<img class="${cls||"thumb"}" src="${pages}" data-cdn="${cdn}" data-raw="${raw}" onerror="if(this.dataset.stage!=='cdn'){this.dataset.stage='cdn';this.src=this.dataset.cdn}else if(this.dataset.stage!=='raw'){this.dataset.stage='raw';this.src=this.dataset.raw}else{this.style.display='none'}" alt="${esc(name)}" loading="lazy" decoding="async">`;
+  return `<img class="${cls||"thumb"}" src="assets/items/${file}" data-pages="${pages}" data-cdn="${cdn}" data-raw="${raw}" onerror="if(this.dataset.stage!=='pages'){this.dataset.stage='pages';this.src=this.dataset.pages}else if(this.dataset.stage!=='cdn'){this.dataset.stage='cdn';this.src=this.dataset.cdn}else if(this.dataset.stage!=='raw'){this.dataset.stage='raw';this.src=this.dataset.raw}else{this.style.display='none'}" alt="${esc(name)}" loading="lazy" decoding="async">`;
 }
 
 
