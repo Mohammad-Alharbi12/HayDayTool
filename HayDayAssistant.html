@@ -299,66 +299,65 @@
     border-radius:50%;display:inline-block;animation:spin .7s linear infinite;vertical-align:-2px}
   @keyframes spin{to{transform:rotate(360deg)}}
 
-  /* My Orders — compact inline task rows */
+  /* My Orders — extra compact two-line task rows */
   #hdTodo .hd-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
   #hdTodo .hd-head h2{margin:0}
   #hdTodo .hd-pill{background:#edf5e4;color:var(--leaf-d);border-radius:20px;padding:4px 9px;font-size:11px;font-weight:800;white-space:nowrap}
   #hdTodo .hd-add-search{width:100%;margin:8px 0 6px}
-  #hdTodo .hd-add-options{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 62px auto;gap:5px;align-items:center}
-  #hdTodo .hd-add-options select{width:100%;min-width:0;padding:7px 4px;font-size:11px}
-  #hdTaskQty{width:62px;min-width:0;text-align:center;padding:7px 3px}
-  #hdTodo .hd-add-options #hdAddTask{padding:7px 9px;white-space:nowrap}
-  #hdTodo .hd-task-list{display:flex;flex-direction:column;gap:5px;margin-top:9px}
-  #hdTodo .hd-task{background:#fff;border:1px solid var(--line);border-radius:9px;padding:5px 6px;margin:0;min-width:0}
-  #hdTodo .hd-taskline{display:flex;align-items:center;gap:4px;min-width:0}
-  #hdTodo .hd-tasktop{display:flex;align-items:center;gap:4px;flex:0 1 88px;min-width:52px;margin:0}
-  #hdTodo .hd-taskimg{width:27px;height:27px;object-fit:contain;flex:0 0 27px;padding:0}
-  #hdTodo .hd-taskname{font-size:11px;font-weight:800;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  #hdTodo .hd-taskqty{font-size:9px;color:var(--muted);white-space:nowrap}
-  #hdTodo .hd-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;flex:1;min-width:0;margin:0}
-  #hdTodo .hd-metric{min-width:0;border:1px solid var(--line);border-radius:6px;padding:3px 1px;text-align:center;background:#f8faf6}
-  #hdTodo .hd-metric small{display:block;font-size:8px;font-weight:800;color:var(--muted);white-space:nowrap;line-height:1.2;margin-bottom:1px}
-  #hdTodo .hd-metric strong{display:block;font-size:13px;line-height:1.25}
-  #hdTodo .hd-metric input{width:100%;max-width:42px;min-width:0;text-align:center;border:0;outline:0;background:transparent;padding:0;font-size:12px;font-weight:850;color:var(--ink);appearance:textfield;-moz-appearance:textfield}
+  #hdTodo .hd-add-options{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 55px auto;gap:4px;align-items:center}
+  #hdTodo .hd-add-options select{width:100%;min-width:0;padding:6px 3px;font-size:10px}
+  #hdTaskQty{width:55px;min-width:0;text-align:center;padding:6px 2px}
+  #hdTodo .hd-add-options #hdAddTask{padding:6px 8px;white-space:nowrap;font-size:11px}
+  #hdTodo .hd-task-list{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+  #hdTodo .hd-task{background:#fff;border:1px solid var(--line);border-radius:8px;padding:4px 5px;margin:0;min-width:0}
+  #hdTodo .hd-taskline{display:grid;grid-template-columns:minmax(66px,1.15fr) repeat(3,minmax(0,1fr));gap:3px;align-items:center;min-width:0}
+  #hdTodo .hd-tasktop{display:flex;align-items:center;gap:3px;min-width:0;margin:0}
+  #hdTodo .hd-taskimg{width:23px;height:23px;object-fit:contain;flex:0 0 23px;padding:0}
+  #hdTodo .hd-taskname{font-size:10px;font-weight:800;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #hdTodo .hd-metrics{display:contents}
+  #hdTodo .hd-metric{height:29px;min-width:0;border:1px solid var(--line);border-radius:5px;padding:2px 1px;text-align:center;background:#f8faf6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
+  #hdTodo .hd-metric small{display:block;font-size:7px;font-weight:800;color:var(--muted);white-space:nowrap;line-height:1.1;margin:0}
+  #hdTodo .hd-metric strong{display:block;font-size:11px;line-height:1.15}
+  #hdTodo .hd-metric input{display:block;width:100%;height:14px;max-width:48px;min-width:0;text-align:center;border:0!important;outline:0;background:transparent!important;box-shadow:none!important;padding:0!important;margin:0;font-size:11px;font-weight:850;color:var(--ink);appearance:none;-moz-appearance:textfield;pointer-events:auto;touch-action:manipulation}
   #hdTodo .hd-metric input::-webkit-inner-spin-button,#hdTodo .hd-metric input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
-  #hdTodo .hd-metric input::placeholder{color:#aeb7a8;opacity:.45}
+  #hdTodo .hd-metric input::placeholder{color:#899487;opacity:.55}
   #hdTodo .hd-metric.remaining{background:#fff9ec}
   #hdTodo .hd-metric.making{background:#f0f5ff}
   #hdTodo .hd-metric.completed{background:#eff8ed}
-  #hdTodo .hd-complete-control{display:flex;align-items:center;justify-content:center;gap:2px}
-  #hdTodo .hd-step{width:17px;height:19px;min-width:17px;padding:0;border:0;border-radius:5px;color:white;font-size:13px;font-weight:900;line-height:1}
+  #hdTodo .hd-taskmeta{display:grid;grid-template-columns:minmax(0,1.15fr) repeat(3,minmax(0,1fr));gap:3px;align-items:center;margin:3px 0 0;min-width:0;color:var(--muted);font-size:8px;line-height:1.1}
+  #hdTodo .hd-taskmeta select{grid-column:1;max-width:100%;min-width:0;width:100%;border:0;background:transparent;color:inherit;font-size:8px;padding:0 12px 0 0;min-height:17px}
+  #hdTodo .hd-taskmeta .hd-machine{grid-column:2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+  #hdTodo .hd-taskmeta .hd-delete{grid-column:3;border:0;background:transparent;color:#b65b50;font-size:8px;padding:1px 2px;min-height:17px;justify-self:start}
+  #hdTodo .hd-complete-control{grid-column:4;display:flex;align-items:center;justify-content:center;gap:4px}
+  #hdTodo .hd-step{width:19px;height:17px;min-width:19px;padding:0;border:0;border-radius:4px;color:white;font-size:12px;font-weight:900;line-height:1}
   #hdTodo .hd-step.plus{background:#239447}
   #hdTodo .hd-step.minus{background:#d94848}
   #hdTodo .hd-step:disabled{opacity:.3}
-  #hdTodo .hd-taskmeta{display:flex;align-items:center;gap:8px;margin:3px 0 0 31px;min-width:0;color:var(--muted);font-size:9px;line-height:1.2}
-  #hdTodo .hd-taskmeta select{max-width:130px;min-width:0;width:auto;border:0;background:transparent;color:inherit;font-size:9px;padding:0 14px 0 0;min-height:18px}
-  #hdTodo .hd-taskmeta .hd-machine{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:125px}
-  #hdTodo .hd-taskmeta .hd-delete{margin-inline-start:auto;border:0;background:transparent;color:#b65b50;font-size:9px;padding:1px 3px;min-height:18px}
-  #hdTodo .hd-empty{text-align:center;color:var(--muted);padding:13px 8px;font-size:12px}
+  #hdTodo .hd-empty{text-align:center;color:var(--muted);padding:12px 8px;font-size:12px}
   #hdTodo .hd-foot{text-align:center;color:var(--muted);font-size:9px;margin-top:7px}
-  #hdTodo .hd-dest-head{display:flex;align-items:center;justify-content:space-between;margin-top:9px;font-size:11px}
-  #hdTodo .hd-dest-manager{display:flex;gap:5px;align-items:center;margin-top:6px}
-  #hdTodo .hd-dest-manager input{flex:1;min-width:0;padding:6px;font-size:11px}
-  #hdTodo .hd-dest-manager button{padding:6px 9px;font-size:11px}
-  #hdTodo .hd-destinations{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
-  #hdTodo .hd-dest{display:inline-flex;align-items:center;gap:4px;background:#edf5e4;border:1px solid #d7e7c6;color:var(--leaf-d);border-radius:14px;padding:3px 6px;font-size:10px;font-weight:700}
-  #hdTodo .hd-dest button{border:0;background:transparent;color:#8a9b7c;font-size:13px;padding:0 1px}
+  #hdTodo .hd-dest-head{display:flex;align-items:center;justify-content:space-between;margin-top:8px;font-size:10px}
+  #hdTodo .hd-dest-manager{display:flex;gap:5px;align-items:center;margin-top:5px}
+  #hdTodo .hd-dest-manager input{flex:1;min-width:0;padding:6px;font-size:10px}
+  #hdTodo .hd-dest-manager button{padding:6px 8px;font-size:10px}
+  #hdTodo .hd-destinations{display:flex;flex-wrap:wrap;gap:4px;margin:5px 0}
+  #hdTodo .hd-dest{display:inline-flex;align-items:center;gap:4px;background:#edf5e4;border:1px solid #d7e7c6;color:var(--leaf-d);border-radius:14px;padding:3px 6px;font-size:9px;font-weight:700}
+  #hdTodo .hd-dest button{border:0;background:transparent;color:#8a9b7c;font-size:12px;padding:0 1px}
   #hdTodo .hd-ac{margin-top:5px;border:1px solid var(--line);border-radius:8px;overflow:hidden;max-height:170px;overflow-y:auto}
-  #hdTodo .hd-suggestion{display:flex;align-items:center;gap:7px;padding:7px 9px;border-bottom:1px solid var(--line2);cursor:pointer;font-size:12px}
+  #hdTodo .hd-suggestion{display:flex;align-items:center;gap:7px;padding:6px 8px;border-bottom:1px solid var(--line2);cursor:pointer;font-size:11px}
   #hdTodo .hd-suggestion:last-child{border:0}
   #hdTodo .hd-suggestion:active{background:#eef5e6}
-  #hdTodo .hd-suggestion .thumb-sm{width:25px;height:25px;flex:0 0 25px}
-  @media(max-width:390px){
-    #hdTodo .hd-tasktop{flex-basis:70px;min-width:45px}
-    #hdTodo .hd-taskimg{width:23px;height:23px;flex-basis:23px}
-    #hdTodo .hd-taskname{font-size:10px}
-    #hdTodo .hd-metric small{font-size:7px}
-    #hdTodo .hd-metric strong{font-size:12px}
-    #hdTodo .hd-metric input{font-size:11px;max-width:34px}
-    #hdTodo .hd-step{width:15px;min-width:15px;height:18px;font-size:12px}
-    #hdTodo .hd-add-options{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 48px auto;gap:3px}
-    #hdTodo .hd-add-options select{font-size:10px;padding:6px 2px}
-    #hdTodo .hd-add-options #hdAddTask{font-size:10px;padding:6px}
+  #hdTodo .hd-suggestion .thumb-sm{width:23px;height:23px;flex:0 0 23px}
+  @media(max-width:360px){
+    #hdTodo .hd-taskline,#hdTodo .hd-taskmeta{grid-template-columns:minmax(58px,1.05fr) repeat(3,minmax(0,1fr));gap:2px}
+    #hdTodo .hd-taskimg{width:20px;height:20px;flex-basis:20px}
+    #hdTodo .hd-taskname{font-size:9px}
+    #hdTodo .hd-metric{height:27px}
+    #hdTodo .hd-metric small{font-size:6px}
+    #hdTodo .hd-metric strong,#hdTodo .hd-metric input{font-size:10px}
+    #hdTodo .hd-step{width:17px;min-width:17px}
+    #hdTodo .hd-add-options{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 43px auto;gap:2px}
+    #hdTodo .hd-add-options select{font-size:9px;padding:5px 1px}
+    #hdTodo .hd-add-options #hdAddTask{font-size:9px;padding:5px}
   }
   .locked-level{display:inline-block;background:#fff2d8;color:#8a5a00;border-radius:7px;padding:2px 6px;font-weight:800;font-size:10px}
   .machine-chip{display:inline-flex;align-items:center;gap:6px}
@@ -732,7 +731,10 @@ function thumb(name, cls){
   const f = NAME_IMG[String(key).toLowerCase()];
   if(!f) return "";
   const file=encodeURIComponent(f);
-  return `<img class="${cls||"thumb"}" src="https://raw.githubusercontent.com/Mohammad-Alharbi12/HayDayTool/main/assets/items/${file}" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/gh/Mohammad-Alharbi12/HayDayTool@main/assets/items/${file}'" alt="${esc(name)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`;
+  const pages="https://mohammad-alharbi12.github.io/HayDayTool/assets/items/"+file;
+  const cdn="https://cdn.jsdelivr.net/gh/Mohammad-Alharbi12/HayDayTool@main/assets/items/"+file;
+  const raw="https://raw.githubusercontent.com/Mohammad-Alharbi12/HayDayTool/main/assets/items/"+file;
+  return `<img class="${cls||"thumb"}" src="${pages}" data-cdn="${cdn}" data-raw="${raw}" onerror="if(this.dataset.stage!=='cdn'){this.dataset.stage='cdn';this.src=this.dataset.cdn}else if(this.dataset.stage!=='raw'){this.dataset.stage='raw';this.src=this.dataset.raw}else{this.style.display='none'}" alt="${esc(name)}" loading="lazy" decoding="async">`;
 }
 
 
@@ -2190,10 +2192,10 @@ loadData();
       '<div class="hd-taskline"><div class="hd-tasktop">'+thumb(t.name,"hd-taskimg")+'<span class="hd-taskname" title="'+esc(displayName(t.name))+'">'+esc(displayName(t.name))+'</span></div>'+
       '<div class="hd-metrics">'+
       '<div class="hd-metric remaining"><small>غير مكتمل</small><strong>'+digits(remaining)+'</strong></div>'+
-      '<div class="hd-metric making"><small>قيد التجهيز</small><input type="number" inputmode="numeric" min="0" max="'+digits(t.qty-t.completed)+'" step="1" value="'+(t.making?digits(t.making):'')+'" placeholder="0" data-action="making" aria-label="قيد التجهيز"></div>'+
-      '<div class="hd-metric completed"><small>مكتمل</small><div class="hd-complete-control"><button class="hd-step minus" type="button" data-action="complete-minus" '+(t.completed<=0?'disabled':'')+' aria-label="إنقاص المكتمل">−</button><strong>'+digits(t.completed)+'</strong><button class="hd-step plus" type="button" data-action="complete-plus" '+(t.completed>=t.qty?'disabled':'')+' aria-label="زيادة المكتمل">+</button></div></div>'+
+      '<div class="hd-metric making"><small>قيد التجهيز</small><input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" value="'+(t.making?digits(t.making):'')+'" placeholder="0" data-action="making" aria-label="قيد التجهيز"></div>'+
+      '<div class="hd-metric completed"><small>مكتمل</small><strong>'+digits(t.completed)+'</strong></div>'+
       '</div></div>'+
-      '<div class="hd-taskmeta"><select data-action="destination" aria-label="وجهة الطلب">'+destinations.map(d=>'<option value="'+esc(d)+'" '+(d===t.destination?'selected':'')+'>'+esc(d)+'</option>').join("")+'</select><span class="hd-machine">'+esc(machine||"كل الآلات")+'</span><button class="hd-delete" type="button" data-action="delete">حذف</button></div></div>';
+      '<div class="hd-taskmeta"><select data-action="destination" aria-label="وجهة الطلب">'+destinations.map(d=>'<option value="'+esc(d)+'" '+(d===t.destination?'selected':'')+'>'+esc(d)+'</option>').join("")+'</select><span class="hd-machine">'+esc(machine||"كل الآلات")+'</span><button class="hd-delete" type="button" data-action="delete">حذف</button><div class="hd-complete-control"><button class="hd-step minus" type="button" data-action="complete-minus" '+(t.completed<=0?'disabled':'')+' aria-label="إنقاص المكتمل">−</button><button class="hd-step plus" type="button" data-action="complete-plus" '+(t.completed>=t.qty?'disabled':'')+' aria-label="زيادة المكتمل">+</button></div></div></div>';
   }
   function render(){
     $("hdTodoCount").textContent=digits(tasks.length)+" طلب";
@@ -2226,6 +2228,7 @@ loadData();
   });
   $("hdTasks").addEventListener("click",e=>{
     const b=e.target.closest("[data-action]");if(!b)return;
+    if(b.dataset.action==="making")return;
     const t=tasks.find(x=>x.id===b.closest("[data-task]")?.dataset.task);if(!t)return;
     if(b.dataset.action==="complete-plus"&&t.completed<t.qty){
       if(t.making>0)t.making--;
@@ -2244,7 +2247,10 @@ loadData();
     const el=e.target.closest("[data-action]");if(!el)return;
     const t=tasks.find(x=>x.id===el.closest("[data-task]")?.dataset.task);if(!t)return;
     if(el.dataset.action==="destination")t.destination=normalizeDestination(el.value);
-    if(el.dataset.action==="making")t.making=Math.max(0,Math.min(t.qty-t.completed,Math.floor(Number(el.value)||0)));
+    if(el.dataset.action==="making"){
+      const typed=String(el.value||"").replace(/[^0-9٠-٩]/g,"").replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d));
+      t.making=Math.max(0,Math.min(t.qty-t.completed,Math.floor(Number(typed)||0)));
+    }
     t.done=t.completed;t.status=t.completed>=t.qty?"completed":t.making>0?"making":"notStarted";
     save();render();
   });
